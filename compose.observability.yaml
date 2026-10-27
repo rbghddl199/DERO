@@ -1,0 +1,134 @@
+# 관측 계층. 앱(compose.yaml)·데이터(compose.data.yaml)와 생명주기를 일부러 갈랐다 — 배포마다
+# 재생성되면 지표가 끊기고, 데이터 계층에 합치면 `up -d` 한 번이 postgres를 재생성할 수 있다
+# (ADR-0020 결정 5).
+#
+#   docker compose -f compose.observability.yaml up -d      (EC2에서 사람이 수동)
+#
+# ⚠ Jenkins는 이 파일을 절대 적용하지 않는다 — Jenkinsfile의 compose 명령에 `-f`가 없어서
+#   표준 파일명만 찾는다(deployment.md §5). 관측 설정을 바꾸면 EC2에서 손으로 다시 올려야 한다.
+#
+# 지표 계층(prometheus·grafana) · 검색 계층(elasticsearch·kibana) · 로그 수집(filebeat) 전부 들었다.
+# 배선·노출 정책·점검 절차 정본: docs/context/observability.md
+
+name: dero-observability
+
+services:
+  elasticsearch:
+    # 공식 이미지가 아니라 Nori를 넣은 커스텀 빌드다 — Jenkins가 짓지 않으니 사람이
+    # `docker compose -f compose.observability.yaml build` 해야 한다(ADR-0019 파급).
+    build:
+      context: ./observability/elasticsearch
+    image: dero-elasticsearch:9.4.2-nori
+    restart: unless-stopped
+    environment:
+      # 1노드다 — 이 값이 없으면 부팅이 클러스터 형성(discovery)을 기다리다 실패한다.
+      discovery.type: single-node
+      # 인증을 끄는 근거는 노출 범위다: 9200은 127.0.0.1과 도커 네트워크에만 붙어 있어
+      # 인터넷에서 닿지 않는다(ADR-0020 결정 4). 포트를 여는 순간 이 줄부터 뒤집어야 한다.
+      xpack.security.enabled: 'false'
+      # mem_limit 3g = 힙 2g + 오프힙. 힙만 키우면 RSS가 한계를 넘어 OOM kill이다(swap 0).
+      ES_JAVA_OPTS: -Xms2g -Xmx2g
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+    ports:
+      # 외부 바인딩 금지 — 인증 없는 9200이 인터넷에 열리면 누구나 인덱스를 지운다
+      # (ADR-0020 결정 4. 랜섬 스캐너 상시 대상 포트).
+      - '127.0.0.1:9200:9200'
+    mem_limit: 3g
+    networks:
+      # backend가 `elasticsearch:9200`을 이름으로 찾아야 한다 — dero-data에 붙는 이유다.
+      - default
+      - dero-data
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:9.4.2
+    restart: unless-stopped
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
+    ports:
+      # Grafana와 달리 서브도메인을 주지 않는다 — SSH 터널로만 본다(ADR-0020 결정 4).
+      - '127.0.0.1:5601:5601'
+    mem_limit: 1g
+    networks:
+      - default
+
+  filebeat:
+    # ES와 같은 번호를 쓴다 — Beats는 자기보다 낮은 ES에 못 쓴다(버전 호환 규칙).
+    image: docker.elastic.co/beats/filebeat:9.4.2
+    restart: unless-stopped
+    # 설정 파일은 root 소유가 아니면 Filebeat이 "config file must be owned by the user
+    # running the process" 로 기동을 거부한다. 컨테이너 안에서 root로 돌리고(-e는 stderr 로깅),
+    # --strict.perms=false로 그 검사를 끈다 — 호스트 파일 소유자를 맞출 방법이 없어서다.
+    user: root
+    command: ['--strict.perms=false', '-e']
+    volumes:
+      - ./observability/filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      # 컨테이너 목록·라벨을 읽어 autodiscover가 백엔드만 고른다(:ro — 조회만 한다).
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # 로그 실물. 도커 json-file 드라이버가 여기에 떨군다.
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      # 읽은 위치(오프셋). **이게 없으면 재시작마다 처음부터 다시 읽어 로그가 중복된다** —
+      # 그리고 ES 장애 시 "끊김이 유실이 아니라 지연"이라는 성질(ADR-0020 결정 3)이 이 볼륨에 산다.
+      - filebeat-data:/usr/share/filebeat/data
+    depends_on:
+      - elasticsearch
+    # 호스트 포트를 열지 않는다 — 밖에서 접근할 이유가 없다.
+    mem_limit: 256m
+    networks:
+      # elasticsearch:9200을 이름으로 찾아야 한다.
+      - default
+
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    restart: unless-stopped
+    command:
+      # command를 덮으면 이미지 기본 인자가 사라진다 — 설정 파일·데이터 경로를 같이 넘긴다.
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      # 지표 보존 기간. 로그 ILM 30일(ADR-0020 결정 6)과 같은 창으로 맞춘다.
+      - --storage.tsdb.retention.time=30d
+    volumes:
+      - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      # 외부 바인딩 금지 — SSH 터널로만 본다(ADR-0020 결정 4).
+      - '127.0.0.1:9090:9090'
+    # swap이 0이라 초과분이 디스크로 밀리지 않고 즉시 OOM kill이다 — mem_limit는 선택이 아니다.
+    mem_limit: 512m
+    networks:
+      # backend를 서비스명으로 찾으려면 dero-data에 붙어야 한다(nginx를 거치지 않는다).
+      - default
+      - dero-data
+
+  grafana:
+    image: grafana/grafana:12.1.0
+    restart: unless-stopped
+    environment:
+      # 나중에 서브도메인으로 외부에 열리는 유일한 도구다 — 기본 비밀번호(admin)로 뜨게 두지 않는다.
+      # `:?`라서 값이 없으면 `up -d` 단계에서 멈춘다(JWT_SECRET과 같은 결).
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD is required}
+      GF_AUTH_ANONYMOUS_ENABLED: 'false'
+      GF_USERS_ALLOW_SIGN_UP: 'false'
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      # 컨테이너 안쪽은 3000 그대로, 호스트만 3001이다 — 호스트 3000은 compose.yaml의 frontend가
+      # 이미 잡고 있다(GF_SERVER_HTTP_PORT는 건드리지 않는다).
+      - '127.0.0.1:3001:3000'
+    mem_limit: 512m
+    networks:
+      - default
+
+volumes:
+  es-data:
+  prometheus-data:
+  grafana-data:
+  filebeat-data:
+
+networks:
+  dero-data:
+    external: true

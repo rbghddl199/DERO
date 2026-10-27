@@ -1,0 +1,52 @@
+[project]
+name = "imagine-img"
+version = "0.1.0"
+description = "DERO 실사화 로컬 AI Worker — SDXL-Lightning 4-step Img2Img + Lanczos 1328x1184"
+requires-python = ">=3.12,<3.13"
+
+# 버전 조합의 근거: 같은 저장소의 Hunyuan3D-2/.venv 에서 이미 CUDA 동작이 확인된 조합.
+# torch 2.6.0+cu124 / diffusers 0.39.0 / transformers 5.14.1 / RTX 4070 Laptop / driver 591.74
+# 아래 4개는 조합이 검증된 값이라 == 로 고정한다. 나머지는 하위 호환이 넓어 >= 로 둔다.
+# 실제 설치된 전체 버전은 requirements-lock.txt 에 있다.
+dependencies = [
+    "torch==2.6.0",
+    "diffusers==0.39.0",
+    "transformers==5.14.1",
+    "accelerate==1.14.0",
+    "safetensors>=0.8.0",
+    "huggingface-hub>=1.25.1",
+    "peft>=0.19",
+    "pillow>=11",
+    "fastapi>=0.115",
+    "uvicorn>=0.34",
+    "python-multipart>=0.0.20",
+    "pydantic>=2.9",
+    "pydantic-settings>=2.6",
+    "typer>=0.15",
+    "rich>=13.7",
+    "psutil>=6",
+    "numpy<3",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3",
+    "httpx>=0.28",
+]
+# 실험 경로. 기본 설치 대상이 아니다 (QUANTIZATION_MODE=none 이 기본).
+quant = [
+    "torchao",
+    "bitsandbytes",
+]
+
+[project.scripts]
+imagine-img = "app.cli:app"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "gpu: 실제 GPU와 모델 가중치가 필요한 테스트 (기본 실행에서 제외)",
+    "slow: 10회 연속 생성처럼 오래 걸리는 테스트",
+]
+# GPU 테스트는 명시적으로 -m gpu 를 줄 때만 돈다.
+addopts = "-m 'not gpu'"

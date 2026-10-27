@@ -1,0 +1,102 @@
+# Swagger·CORS는 공통(application.yaml)의 안전 기본값을 그대로 쓴다 — 여기서 다시 열지 않는다.
+# 값의 출처는 전부 컨테이너 env다 — 루트 .env → compose 보간 → 컨테이너 env(ADR-0010 결정 1).
+# 아래 placeholder는 그 env를 명시적으로 바인딩한다(2026-07-29, spring-boot-docker-compose 제거와
+# 같은 결로 — 값이 어디서 오는지 yaml에서 보이게 한다). env 키는 루트 compose.yaml의
+# backend.environment와 짝이다 — 한쪽을 바꾸면 같이 바꾼다.
+# nginx가 TLS를 끊고 백엔드엔 평문 HTTP로 넘기므로, 이걸 켜지 않으면 Spring이
+# 요청 스킴을 http로 보고 OAuth `{baseUrl}`을 `http://www.dero.life`로 조립한다 —
+# 카카오·구글이 "등록하지 않은 리다이렉트 URI"로 인가를 거부한다(2026-08-01 실측).
+# nginx는 이미 `X-Forwarded-Proto $scheme`를 보내고 있고, 무시하던 쪽이 Spring이었다.
+server:
+  forward-headers-strategy: framework
+
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+  data:
+    redis:
+      # compose.data.yaml의 서비스명이 네트워크 별칭으로 해석된다.
+      host: ${SPRING_DATA_REDIS_HOST}
+      port: 6379
+  security:
+    oauth2:
+      client:
+        provider:
+          kakao:
+            authorization-uri: https://kauth.kakao.com/oauth/authorize
+            token-uri: https://kauth.kakao.com/oauth/token
+            user-info-uri: https://kapi.kakao.com/v2/user/me
+            user-name-attribute: id
+        registration:
+          # id·secret은 세트로 온다. 한쪽만 있으면 registration이 반쪽이 되어
+          # `Client id of registration 'kakao' must not be empty`로 부팅이 죽는다(실측).
+          kakao:
+            client-id: ${OAUTH_KAKAO_CLIENT_ID}
+            client-secret: ${OAUTH_KAKAO_CLIENT_SECRET}
+            client-authentication-method: client_secret_post
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/api/login/oauth2/code/{registrationId}"
+            scope: profile_nickname
+          google:
+            client-id: ${OAUTH_GOOGLE_CLIENT_ID}
+            client-secret: ${OAUTH_GOOGLE_CLIENT_SECRET}
+            # 구글은 CommonOAuth2Provider.GOOGLE 프리셋이 redirect-uri 기본값
+            # `{baseUrl}/login/oauth2/code/{registrationId}`를 들고 있어서, 명시하지 않으면
+            # 카카오만 /api/ 아래로 가고 구글은 조용히 옛 경로로 간다(ADR-0005 결정 11).
+            redirect-uri: "{baseUrl}/api/login/oauth2/code/{registrationId}"
+            scope: email,profile
+
+app:
+  jwt:
+    # 운영 실값은 EC2 루트 .env의 JWT_SECRET(ADR-0010 결정 1).
+    secret: ${APP_JWT_SECRET}
+  oauth:
+    # 로그인 성공 핸들러가 리프레시 쿠키를 굽은 뒤 리다이렉트하는 고정 프론트 경로(ADR-0005 결정 8).
+    # 프론트는 nginx가 같은 도메인 `/`로 서빙한다(deployment.md 라우팅 표).
+    success-redirect-uri: https://www.dero.life/auth/callback
+  storage:
+    # 공통 기본값 local을 여기서 덮는다(infra/CLAUDE.md — "S3를 붙이는 날 프로파일에서 s3로 덮는다").
+    # local로 두면 LocalPresignService가 `app.storage.local-base-url` 기본값 그대로
+    # `http://localhost:8080/api/v1/local-files/...`를 presign URL로 내주고, https 페이지의
+    # 브라우저가 mixed content로 막아 관리자 업로드가 `Failed to fetch`로 죽는다(2026-08-01 실측).
+    # 자격증명·버킷은 compose가 넘기는 AWS_* 4종에서 온다(공통 application.yaml의 app.storage.s3).
+    mode: s3
+    # 이미지 안정 공개 URL의 오리진(ADR-0035). 공통 기본값은 localhost라 여기서 덮지 않으면
+    # 운영 응답의 모든 이미지 URL이 localhost를 가리킨다 — prod 전용 설정은 CI가 못 잡으니
+    # 이 줄을 지우면 배포에서만 죽는다.
+    public-base-url: https://www.dero.life
+  image:
+    generation:
+      # 기본값은 여전히 stub이고, 전환은 박동규가 배포 시 결정한다(DERO-354).
+      # 켜려면 루트 .env에 IMAGE_GENERATION_MODE=gms + GMS_API_KEY=<키> 두 줄을 넣고 다시 올린다 —
+      # 이미지 재빌드도 코드 수정도 필요 없다(DERO-358). 키가 비면 기동이 즉시 죽는다:
+      # 운영에서만 드러나는 조용한 누락을 만들지 않기 위해서다.
+      # 선행 조건이던 "S3용 StoragePort"는 DERO-357에서 채워졌다 — mode=s3인 운영에서
+      # GMS가 만든 PNG가 S3에 들어가고 presign이 같은 객체를 가리킨다.
+      mode: ${IMAGE_GENERATION_MODE:stub}
+    worker:
+      # 공통 기본값(꺼짐)을 여기서 켠다 — 지금은 이 WAS가 유일한 큐 소비자라(D27-보 스텁 워커)
+      # 끄면 업로드가 전부 PENDING에 멈춘다. 진짜 python 워커가 붙는 날 이 줄을 false로 되돌린다.
+      enabled: true
+
+logging:
+  level:
+    root: info
+    com.brunchies.dero: info
+  # ECS(Elastic Common Schema) JSON을 stdout으로 뱉는다 — Boot 4.1 내장이라
+  # logstash-logback-encoder도 logback.xml도 필요 없다(ADR-0020 결정 2).
+  # 이 줄이 없으면 Filebeat이 평문 한 줄을 통째로 message에 넣어 레벨·logger로 거를 수 없고,
+  # logger 이름으로 스트림을 가르는 라우팅(observability.md §6)이 아예 성립하지 않는다.
+  # **prod 전용이다** — 로컬은 사람이 읽는 평문이 낫다. 그리고 prod 전용 설정은 CI가 안 잡아
+  # 배포에서만 드러나므로, StructuredLoggingConfigTest가 이 파일을 직접 읽어 지킨다.
+  structured:
+    format:
+      console: ecs
+    json:
+      stacktrace:
+        # 원인 예외를 맨 위로 — 길이 상한에 걸려 잘려도 무엇이 터졌는지는 남는다.
+        root: first
+        # 한 문서가 커지면 ES 색인 비용이 붙는다. 프레임 수십 줄이면 원인 파악에 충분하다.
+        max-length: 2048

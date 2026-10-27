@@ -1,0 +1,19 @@
+# Prometheus 수집 설정. compose.observability.yaml이 읽기 전용으로 마운트한다.
+#
+# 타깃은 도커 네트워크 안의 backend 컨테이너다 — nginx를 거치지 않으므로
+# nginx의 `location = /api/actuator/prometheus { deny all; }`(observability.md §4)와 충돌하지 않는다.
+# 호스트명 `backend`는 compose.yaml 서비스명이 dero-data 네트워크에서 별칭으로 해석된 것이고,
+# 포트는 컨테이너 내부 8080이다(호스트 8081이 아니다).
+
+global:
+  scrape_interval: 15s
+  scrape_timeout: 10s
+
+scrape_configs:
+  - job_name: dero-backend
+    # base-path가 /api/actuator다(application.yaml) — 기본 /actuator/prometheus가 아니다.
+    metrics_path: /api/actuator/prometheus
+    static_configs:
+      - targets: ['backend:8080']
+        labels:
+          service: dero-api

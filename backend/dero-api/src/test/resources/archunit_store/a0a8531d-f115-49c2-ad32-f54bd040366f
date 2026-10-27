@@ -1,0 +1,7 @@
+Method <com.brunchies.dero.auth.SocialProfileExtractor.extract(java.lang.String, java.util.Map)> calls constructor <java.lang.IllegalArgumentException.<init>(java.lang.String)> in (SocialProfileExtractor.java:24)
+Method <com.brunchies.dero.infra.LocalFileStoragePort.delete(java.lang.String)> calls constructor <java.io.UncheckedIOException.<init>(java.io.IOException)> in (LocalFileStoragePort.java:55)
+Method <com.brunchies.dero.infra.LocalFileStoragePort.load(java.lang.String)> calls constructor <java.io.UncheckedIOException.<init>(java.io.IOException)> in (LocalFileStoragePort.java:46)
+Method <com.brunchies.dero.infra.LocalFileStoragePort.store(java.lang.String, [B)> calls constructor <java.io.UncheckedIOException.<init>(java.io.IOException)> in (LocalFileStoragePort.java:33)
+Method <com.brunchies.dero.placement.PlacedItem.mountVesaTo(com.brunchies.dero.placement.PlacedItem)> calls constructor <java.lang.IllegalArgumentException.<init>(java.lang.String)> in (PlacedItem.java:212)
+Method <com.brunchies.dero.product.Product.attachAsset(com.brunchies.dero.product.Asset)> calls constructor <java.lang.IllegalArgumentException.<init>(java.lang.String)> in (Product.java:171)
+Method <com.brunchies.dero.product.Product.attachEmitter(com.brunchies.dero.product.ProductEmitter)> calls constructor <java.lang.IllegalArgumentException.<init>(java.lang.String)> in (Product.java:179)

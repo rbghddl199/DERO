@@ -1,0 +1,6 @@
+# 프로젝트 스코프 codex 설정. 정본 규칙: docs/HARNESS.md · ADR-0032
+# MCP 정의는 .mcp.json(Claude)과 여기(codex) 두 곳 — 서버 추가 시 둘 다 갱신할 것.
+
+[mcp_servers.scrapling]
+command = "scrapling"
+args = ["mcp"]

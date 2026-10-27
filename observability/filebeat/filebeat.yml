@@ -1,0 +1,73 @@
+# Filebeat — 도커가 떨군 컨테이너 로그 파일을 읽어 Elasticsearch로 부친다(ADR-0020 결정 1·2).
+#
+# 앱은 이 파일의 존재를 모른다. 흐름은 세 단계다:
+#   Spring(ECS JSON) → stdout → docker json-file(/var/lib/docker/containers/*/*-json.log) → Filebeat → ES
+#
+# **파일이 가운데 있는 것이 설계다.** Filebeat은 그 파일의 바이트 오프셋을 들고 있어서 ES가 죽으면
+# 읽기를 멈추고 기다렸다가 살아나면 이어 읽는다 — 장애가 유실이 아니라 지연이 된다(ADR-0020 결정 3).
+# 앱 → Logstash TCP 직송을 부결한 이유가 이것이다(버퍼가 사라져 앱이 블록되거나 로그가 사라진다).
+
+filebeat.autodiscover:
+  providers:
+    - type: docker
+      # ⚠ 라벨 키는 **점 경로**다(`com_docker_compose_service` 아님). autodiscover가 라벨을
+      # 중첩 객체로 펼치기 때문이다 — 실측한 이벤트 구조:
+      #   labels: { com: { docker: { compose: { service: "backend" } } } }
+      # 언더스코어로 쓰면 조건이 아무 컨테이너에도 안 맞고, **에러도 경고도 없이** 레지스트리가
+      # 빈 채로 남는다(2026-08-06 실측, filebeat 9.4.2 — 디버그 로그를 켜야 보인다).
+      #
+      # ⚠ 컨테이너 **이름으로 고르지 않는다.** 무중단 배포 방식에 따라 서빙 컨테이너 이름이
+      # `dero-backend-1`이었다가 `dero-green-backend-1`이 된다(2026-08-06 실측). compose 서비스
+      # 라벨은 그 사이에도 `backend`로 고정이라 이름 규칙이 바뀌어도 안 깨진다.
+      #
+      # 백엔드만 수집하는 것도 의도다 — ECS JSON을 뱉는 건 이 컨테이너뿐이고, postgres·redis·ES는
+      # 평문이라 아래 ndjson 파서가 줄마다 파싱 에러를 낸다. 다른 컨테이너를 넣고 싶어지면
+      # 그때 조건과 파서를 같이 늘린다.
+      templates:
+        - condition:
+            equals:
+              docker.container.labels.com.docker.compose.service: backend
+          config:
+            - type: filestream
+              id: dero-backend-${data.docker.container.id}
+              paths:
+                - /var/lib/docker/containers/${data.docker.container.id}/*-json.log
+              parsers:
+                # 1차: 도커가 씌운 봉투를 벗긴다({"log":"...","stream":"stdout","time":"..."}).
+                - container:
+                    stream: all
+                    format: docker
+                # 2차: 봉투 안의 ECS JSON을 루트로 펼친다. 이게 없으면 @timestamp·log.level·
+                # log.logger가 전부 message 문자열 안에 갇혀, 라우팅도 필터도 못 한다.
+                - ndjson:
+                    target: ''
+                    overwrite_keys: true
+                    add_error_key: true
+                    expand_keys: true
+
+processors:
+  # 컨테이너 메타(이미지·이름·compose 프로젝트)를 붙인다 — 어느 배포의 로그인지 구분하는 유일한 단서다.
+  - add_docker_metadata: ~
+  # Filebeat 자신의 호스트 메타는 단일 노드라 값이 없다. 문서만 커진다.
+  - drop_fields:
+      fields: ['agent.ephemeral_id', 'ecs.version']
+      ignore_missing: true
+
+output.elasticsearch:
+  # 도커 네트워크 이름으로 찾는다 — filebeat이 dero-data 네트워크에 붙는 이유다.
+  hosts: ['http://elasticsearch:9200']
+  # 기본은 앱 로그 스트림. 검색어 이벤트는 아래 파이프라인이 logger 이름을 보고 갈라 보낸다.
+  index: 'app-logs-default'
+  pipeline: 'dero-log-routing'
+
+# 데이터 스트림·ILM·인덱스 템플릿은 Filebeat이 만들지 않는다 —
+# observability/elasticsearch/bootstrap-log-indices.sh가 만든다(스트림이 둘이고 보존 기간이 달라
+# Filebeat의 setup.ilm 한 벌로는 표현이 안 된다). 그래서 여기서는 자체 setup을 전부 끈다.
+setup.ilm.enabled: false
+setup.template.enabled: false
+
+# 자기 로그는 stdout으로. 파일로 쓰면 자기가 자기를 읽는다.
+logging.to_files: false
+logging.level: warning
+
+monitoring.enabled: false

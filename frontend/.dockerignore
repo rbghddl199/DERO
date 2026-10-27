@@ -1,0 +1,16 @@
+node_modules/
+.next/
+out/
+
+# GLB 원본 89.7MB. 이미지에 들어가는 건 가공된 public/assets뿐이다.
+assets-raw/
+
+# 빌드에 필요 없다.
+e2e/
+tests/
+playwright-report/
+test-results/
+qa-artifacts/
+scratch-*.mjs
+
+*.md

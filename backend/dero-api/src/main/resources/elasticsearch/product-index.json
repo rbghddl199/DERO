@@ -1,0 +1,63 @@
+{
+  "settings": {
+    "index": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0
+    },
+    "analysis": {
+      "tokenizer": {
+        "nori_brand": {
+          "type": "nori_tokenizer",
+          "decompound_mode": "mixed",
+          "user_dictionary_rules": []
+        },
+        "name_edge_ngram": {
+          "type": "edge_ngram",
+          "min_gram": 2,
+          "max_gram": 20,
+          "token_chars": ["letter", "digit"]
+        }
+      },
+      "analyzer": {
+        "korean": {
+          "type": "custom",
+          "tokenizer": "nori_brand",
+          "filter": ["lowercase"]
+        },
+        "korean_edge_ngram": {
+          "type": "custom",
+          "tokenizer": "name_edge_ngram",
+          "filter": ["lowercase"]
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "name": {
+        "type": "text",
+        "analyzer": "korean",
+        "fields": {
+          "autocomplete": {
+            "type": "text",
+            "analyzer": "korean_edge_ngram",
+            "search_analyzer": "korean"
+          },
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "categoryPath": {
+        "type": "text",
+        "analyzer": "korean"
+      },
+      "suggest": {
+        "type": "completion",
+        "analyzer": "korean",
+        "search_analyzer": "korean",
+        "preserve_separators": false
+      }
+    }
+  }
+}

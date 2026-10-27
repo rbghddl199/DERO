@@ -1,0 +1,106 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '4.1.0'
+	id 'io.spring.dependency-management' version '1.1.7'
+	// 포맷 판정을 기계로 옮긴다(2026-08-11 박동규 지시). 없던 동안 포맷 정리가 에이전트 몫이 되어
+	// 같은 코드의 줄바꿈만 바꾸는 편집에 토큰이 샜고, 스타일 SoT(docs/GoogleStyle_custom.xml)를
+	// 지킬 강제가 없어 실측 419/509 파일이 탭 들여쓰기였다(문서 규정은 스페이스 2).
+	id 'com.diffplug.spotless' version '8.9.0'
+}
+
+group = 'com.brunchies'
+version = '0.0.1-SNAPSHOT'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(21)
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	// Boot BOM이 관리하지 않는다 — 버전 명시 필수(AWS SDK v2, S3 presigned URL 발급용).
+	implementation platform('software.amazon.awssdk:bom:2.49.5')
+	implementation 'software.amazon.awssdk:s3'
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	// actuator의 /prometheus 엔드포인트는 이 레지스트리가 클래스패스에 있을 때만 생긴다 —
+	// 없으면 exposure.include에 적어도 조용히 404다(ADR-0020 파급).
+	implementation 'io.micrometer:micrometer-registry-prometheus'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+	// Spring Data Elasticsearch가 아니라 클라이언트 스타터다(ADR-0019 결정 4) — ES는 제품 id만
+	// 돌려주고 정본은 Postgres라 리포지토리·엔티티 매핑 레이어를 쓸 자리가 없다.
+	// 4.1.0이 끌어오는 elasticsearch-java는 9.4.2 — observability/elasticsearch/Dockerfile의
+	// 서버 태그와 같이 움직인다.
+	implementation 'org.springframework.boot:spring-boot-starter-elasticsearch'
+	implementation 'org.springframework.boot:spring-boot-starter-flyway'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-security-oauth2-client'
+	implementation 'org.springframework.boot:spring-boot-starter-security-oauth2-resource-server'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+	implementation 'org.flywaydb:flyway-database-postgresql'
+	// Boot BOM이 관리하지 않는다 — 버전 명시 필수. 3.x가 Boot 4용, 2.8.x는 Boot 3용이라 쓰면 안 된다.
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.3'
+	// Boot BOM이 관리하지 않는다 — 버전 명시 필수(ADR-0018 결정 2). group이 com.querydsl이 아니라
+	// openfeign 포크다 — 원본 5.1.0은 JPA 3.1/Hibernate 6 시절이고, 포크 7.0이 JPA 3.2 + Hibernate 7
+	// 라인을 잡는다. 패키지명은 그대로 com.querydsl.*라 import는 안 바뀐다.
+	implementation 'io.github.openfeign.querydsl:querydsl-jpa:7.0'
+	compileOnly 'org.projectlombok:lombok'
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+	runtimeOnly 'org.postgresql:postgresql'
+	annotationProcessor 'org.projectlombok:lombok'
+	annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+	// Q클래스 생성기. classifier jakarta가 jakarta.persistence 애노테이션을 읽는 빌드다.
+	// 뒤의 둘은 apt가 애노테이션 자체를 로드하는 데 필요하다 — 없으면 Q클래스가 조용히 안 만들어진다.
+	annotationProcessor 'io.github.openfeign.querydsl:querydsl-apt:7.0:jakarta'
+	annotationProcessor 'jakarta.annotation:jakarta.annotation-api'
+	annotationProcessor 'jakarta.persistence:jakarta.persistence-api'
+	testImplementation 'org.springframework.boot:spring-boot-starter-actuator-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-data-redis-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-flyway-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-security-oauth2-client-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-security-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-validation-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+	// Boot BOM이 관리하지 않는다 — 버전 명시 필수(ADR-0011 컨벤션의 기계 강제, ADR-0007 결정 7의 역류 트리거 발동).
+	testImplementation 'com.tngtech.archunit:archunit-junit5:1.4.2'
+	testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+	testImplementation 'org.testcontainers:testcontainers-junit-jupiter'
+	// S3 StoragePort의 store→load 왕복을 진짜 S3 API로 확인한다(DERO-357). AWS는 안 부른다.
+	testImplementation 'org.testcontainers:testcontainers-localstack'
+	testImplementation 'org.testcontainers:testcontainers-postgresql'
+	// 검색 테스트는 Nori가 든 커스텀 이미지를 컨테이너에서 직접 빌드한다 — 공식 이미지로 돌리면
+	// 매핑 생성부터 실패해서 "띄어쓰기 불일치를 잡는다"는 결정 자체를 검증할 수 없다.
+	testImplementation 'org.testcontainers:testcontainers-elasticsearch'
+	testCompileOnly 'org.projectlombok:lombok'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	testAnnotationProcessor 'org.projectlombok:lombok'
+}
+
+spotless {
+	// develop 기준으로 바뀐 파일만 판정한다. 509개 전체를 한 번에 재포맷하면 열려 있는 MR 전부와
+	// 충돌하므로, 손댄 파일부터 규칙에 들어오게 한다. 전체 정리는 별건 결정.
+	ratchetFrom 'origin/develop'
+
+	java {
+		// docs/GoogleStyle_custom.xml과 같은 값이다 — 들여쓰기 2, 이어쓰기 4, 우측 여백 100.
+		// IntelliJ Reformat과 이 태스크가 다른 답을 내면 둘이 영원히 싸우니, 스킴을 바꾸면 여기도 바꾼다.
+		googleJavaFormat('1.36.1')
+		removeUnusedImports()
+	}
+}
+
+tasks.named('bootRun') {
+	systemProperty 'spring.profiles.active', 'local'
+	systemProperty 'user.timezone', 'Asia/Seoul'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+	systemProperty 'user.timezone', 'Asia/Seoul'
+}

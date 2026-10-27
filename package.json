@@ -1,0 +1,8 @@
+{
+  "name": "dero",
+  "dependencies": {
+    "@next/third-parties": "^16.2.12",
+    "pg": "^8.23.0",
+    "sharp": "^0.34.5"
+  }
+}

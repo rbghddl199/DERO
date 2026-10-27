@@ -1,0 +1,264 @@
+# 크롤링 제품 사진 -> 저작권에 걸리지 않는 자체 이미지 (2026-08-04, 임시 작업용)
+#
+# 쓰는 법:
+#   python -m app.cli generate inputs/products/keyboard.png \
+#       --prompt-file prompts/product_copyright_safe.txt \
+#       --products "mechanical keyboard" --job-id kb-01
+#
+# 이 파일이 켜지면 prompt_builder(데스크 실사화 문장 조합)는 통째로 우회된다.
+# 아래 글이 프롬프트의 유일한 출처다. 모델·strength·ControlNet 설정은 건드리지 않는다.
+#
+# --- 지금 쓰던 한국어 프롬프트를 어디에 옮겼는지 ---------------------------
+#   "실제 놓여져 있는 모습 1컷으로"  -> 1번 블록 (single natural photo / in use / on a real surface)
+#   "배경을 제품에 어울리게"          -> 2번 블록 (fitting environment, styled to the product)
+#   "제품이 잘보이게"                -> 3번 블록 (hero subject, unobstructed, sharp focus)
+#   저작권 회피                      -> 4번 블록 + [negative] 의 로고/문자 항목
+#
+# --- 2026-08-04 실측: 어떻게 돌려야 쓸 만한 것이 나오는가 ------------------
+# 다나와 크롤링 이미지(products.id=528, NACODEX NK61 배너)로 세 번 돌려 확인한 것.
+#
+#   (1) 기본 설정 그대로 (CN 0.6 / strength 0.75)
+#       -> **못 쓴다.** 배너 레이아웃과 브랜드 문자("NACODEX", "NK61 Mechanical keyboard")가
+#          거의 그대로 남는다. RGB 조명과 재질만 바뀐다. 저작권 관점에서 원본 사진이다.
+#   (2) CN 0.2 / strength 0.9 로 풀어 준 경우
+#       -> 문자는 읽을 수 없게 부서지지만 **글자 블록이 있던 자리는 그대로 남고** 키보드가
+#          뭉갠 흐린 형태가 된다. 상단 텍스트 영역이 화면의 절반을 먹고 있어서다.
+#   (3) 제품 영역만 crop 한 뒤 CN 0.45 / strength 0.9   <-- 이 조합을 쓸 것
+#       -> 책상 위에 놓인 실사 컷이 나온다. 배경(모니터·책상)이 새로 생기고, 제품이 크게
+#          잘 보이고, 브랜드 문자는 붉은 얼룩 하나로만 남는다.
+#
+#   python -m app.cli generate <crop.png> --prompt-file prompts/product_copyright_safe.txt \
+#       --products "mechanical keyboard" --strength 0.9 --job-id cr-01
+#   (CONTROLNET_CONDITIONING_SCALE=0.45 를 환경변수로 준다. .env 를 고치지 않아도 된다.)
+#
+# 즉 **판촉 배너를 그대로 넣으면 안 된다.** 이 파이프라인은 img2img 라서 입력 화면의
+# 구성을 물려받는다. 문자·로고·여러 컷이 붙은 이미지는 제품 영역을 먼저 잘라내야 한다.
+# 색상 변형 4컷을 넣으면 결과도 흰 배경 4컷이 된다 — 아래 "1컷" 지시가 ControlNet 에 진다.
+#
+# 그리고 **카테고리마다 canny 강도가 다르다.** 모니터는 화면 사진과 로고가 윤곽에 들어와
+# 있어서 0.15 까지 낮춰야 지워진다 (app/product_batch.py CATEGORY_CONTROLNET_SCALE).
+# `batch-products` 는 그 표를 자동으로 적용한다.
+#
+# --- 흰 배경은 프롬프트로 못 없앤다 (2026-08-04 실측) ----------------------
+# 쇼핑몰 사진처럼 **배경이 흰색인 입력**은 결과도 흰 배경이 된다. 아래 §2 의 "제품에 어울리는
+# 환경" 지시가 무시되는 것이다. 라이프스타일 사진이 입력이면 잘 나오므로, 배경은 프롬프트가
+# 만드는 것이 아니라 **입력에 있는 것이 남는 것**이다.
+#
+# 흰 배경을 방으로 바꾸려고 시험한 것과 결과 — 전부 실패했다. 다시 시도하지 말 것:
+#
+#   strength 0.9 -> 1.0 (입력을 완전히 노이즈로 덮음)   흰 배경 그대로, 제품만 망가짐
+#   CN 0.45 -> 0.25 -> 0.10                          흰 배경 그대로, 0.10 은 시계가 카메라로
+#   control_guidance_end 0.5 (후반 스텝에서 조건 해제)  흰 배경 그대로
+#   프롬프트를 장면 먼저 쓰도록 재배열                  흰 배경 그대로
+#   negative 의 흰 배경 금지어 (이미 아래에 있다)       효과 없음
+#
+# 원인은 canny 조건 이미지다. 제품 외곽선 바깥이 비어 있어서 그 영역이 "아무것도 없음" 으로
+# 남는다.
+#
+# **그래서 배경은 2단계에서 만든다** — 1단계 결과에서 배경 영역을 마스크로 골라 inpaint 로
+# 다시 그린다 (app/generation/background.py, scene.py). 배경 프롬프트는 이 파일 아래
+# [background] 섹션이다. 위 목록은 "프롬프트로 해보려다 실패한 것" 의 기록이니, 배경이
+# 마음에 안 들면 strength·CN 을 만지는 대신 [background] 섹션을 고칠 것.
+#
+# --- 프롬프트가 못 하는 일 -------------------------------------------------
+# 1) 프롬프트는 저작권 판단을 대신하지 못한다. 여기 적은 문장은 "로고·문자·고유 장식을
+#    빼고 새로 찍은 사진처럼 만들라"는 지시일 뿐이다. 원본과 얼마나 멀어졌는지는 위
+#    strength·ControlNet 조합이 정하고, 마지막 판단은 사람이 원본과 나란히 놓고 해야 한다.
+# 2) CLIP 은 부정문을 못 읽는다("no logo" 의 no 를 무시한다). 그래서 빼야 할 것은
+#    positive 가 아니라 [negative] 에 적었다. NEGATIVE_PROMPT_PROFILE 은 이 파일을 쓰는
+#    동안 무시되고, 아래 [negative] 블록이 그대로 실린다.
+# 3) 로고 자리에 남는 얼룩은 negative 로 완전히 지워지지 않는다. 원본에 로고가 크게
+#    박혀 있으면 그 부분을 crop 에서 빼거나, 나온 이미지에서 사람이 확인해야 한다.
+
+# 블록 사이 빈 줄과 주석은 사라지고 **모든 줄이 공백 하나로 이어붙는다.** 그래서 각 블록의
+# 마지막 줄은 마침표(negative 는 쉼표)로 끝낸다 — 없으면 "realistic exposure an environment"
+# 처럼 두 문장이 한 구절로 붙어 CLIP 이 엉뚱한 개념으로 읽는다.
+
+# 1. 실제 놓여져 있는 모습 1컷 — 카탈로그 컷이 아니라 쓰이는 자리에 놓인 사진
+a single photograph of one {products} sitting in the place where it is actually used,
+resting on a real surface with its own weight, casually placed rather than arranged,
+one natural camera angle slightly above the object, three-quarter view,
+shot on 50mm lens at f/2.8, natural vignette, fine film grain, realistic exposure.
+
+# 2. 배경을 제품에 어울리게 — 제품 성격에 맞는 공간을 만들어 넣는다
+an environment that suits this product, styled to match its material and colour,
+believable room behind it with soft depth of field, out-of-focus background,
+a few plain everyday objects nearby for scale, natural window light from one side,
+soft contact shadow directly under the object, ambient occlusion where it meets the surface.
+
+# 3. 제품이 잘 보이게 — 주인공이 흐려지거나 가려지지 않게
+the product is the clear subject, large in frame, fully visible and unobstructed,
+sharp focus on the product body, clean silhouette separated from the background,
+even light across the product, no harsh glare on its surface, its shape easy to read.
+
+# 4. 저작권 — 브랜드 흔적이 없는, 이 제품 종류의 일반적인 물건
+a generic unbranded product of this kind, plain unmarked surfaces,
+original everyday industrial design, simple neutral form,
+matte and brushed material finish with real dust and micro-scratches,
+newly photographed, not a copy of any existing catalogue image.
+
+# ===========================================================================
+# 카테고리별 블록. 폴더 이름(= 카테고리 코드)이 맞을 때만 위 공통 문장 뒤에 붙는다.
+# 새 카테고리를 추가하려면 [when CODE] 블록을 하나 더 쓰면 된다. 형식:
+#   [when CODE]            그 카테고리일 때만 붙는 positive
+#   [when CODE negative]   그 카테고리일 때만 붙는 negative
+#   [when CODE, OTHER]     쉼표로 여러 코드
+# ===========================================================================
+
+# 모니터 — **화면에 깔려 있던 배경화면이 남으면 안 된다.** 그 배경 사진도 남의 저작물이고,
+# 제조사 UI·아이콘·게임 화면도 마찬가지다. 원본과 "다른 것이기만 하면" 되므로, 알아볼 수
+# 있는 사진 대신 단색에 가까운 그라디언트를 깔라고 지시한다 — 무엇을 그릴지 좁게 정해주는
+# 편이 "다른 배경"이라는 막연한 지시보다 확실하게 갈린다.
+[when MONITOR]
+the screen displays a plain abstract gradient wallpaper in one soft colour,
+a completely different wallpaper from the original, smooth blurred colour field only,
+an empty desktop with nothing on it, no user interface, no icons, no windows, no text,
+the screen glows gently and lights the desk in front of it,
+the bezel is thin and unmarked.
+
+[when MONITOR negative]
+desktop icons, taskbar, dock, menu bar, open window, dialog box, web page, browser,
+game screenshot, movie still, landscape photograph on screen, portrait on screen,
+recognizable wallpaper, brand wallpaper, boot logo, screen text, subtitles, watermark on screen,
+moire pattern, pixelated screen, screen reflection of a photo,
+
+# 키보드 — 키캡 각인은 원본 글자를 흉내내다 깨진 문자가 된다. 아예 없는 쪽이 낫다.
+[when KEYBOARD]
+plain unmarked keycaps with no legends printed on them,
+uniform keycap colour, even keycap height, no backlight text,
+the key grid is regular and undistorted.
+
+[when KEYBOARD negative]
+garbled letters on keycaps, random symbols, wrong keyboard layout, missing keys,
+extra key row, melted keycaps, rgb rainbow underglow, neon glow,
+
+# ===========================================================================
+# 배경 생성 (2단계 inpaint). 1단계 결과에서 배경 영역만 마스크로 골라 다시 그린다.
+#
+# **1단계와 다른 프롬프트여야 한다.** 위 §3 은 "제품이 화면을 크게 채우고 배경과 분리되어
+# 보이게" 라고 말하는데, 그 문장을 배경 단계에 실으면 방을 그리지 말라는 지시로 읽힌다.
+# 여기서는 반대로 방을 주인공처럼 말한다. 제품 픽셀은 마스크가 지키므로 제품 이야기는
+# "그 위에 놓여 있다" 정도만 남긴다.
+#
+# **제품 이름을 부르지 않는다.** `{products}` 를 쓰면(예: "the chair stands on the floor")
+# 모델이 마스크의 빈 자리에 **그 물건을 하나 더 그린다** — 의자 뒤에 나무 의자가 생겼다
+# (2026-08-04 실측). 이 단계에서는 늘 "the object" 로 가리킨다.
+# ===========================================================================
+# 아래에서 **"물건을 놓지 말라"는 지시가 절반이다.** 마스크 안쪽(제품 주변)을 모델이 채우는데,
+# 그냥 두면 받침대·카메라 렌즈·두 번째 키보드 같은 것을 만들어 넣는다 (2026-08-04 실측:
+# 탁상시계가 카메라 렌즈 위에 떠 있었다). 빈 책상 면을 명시해야 제품이 바닥에 놓인다.
+[background]
+an editorial interior photograph of a bright modern room, magazine quality,
+the object in the middle of the frame stands where this kind of thing is actually used,
+large soft daylight comes from a window at one side, the light is diffused and even,
+warm highlights on the desk and gentle shadows falling away from the window,
+a soft dark contact shadow directly beneath the object anchors it to the surface,
+generous empty space around the object so it reads clearly against the wall,
+a few small tasteful props well behind the object and out of focus,
+each prop much smaller than the object, none of them touching or overlapping it,
+muted neutral palette of oat, warm grey, pale wood and off-white,
+shallow depth of field, the wall and props blurred, the object in sharp focus,
+photographed on a 50mm lens at f/2.0 in available daylight, fine grain, calm clean composition.
+
+# --- 놓이는 면은 카테고리가 정한다 ---------------------------------------
+# 공통 배경에 "책상 위" 라고 적으면 **의자가 탁자 위 미니어처로 나온다** (2026-08-04 실측).
+# 바닥에 서는 것 / 책상에 놓이는 것 / 벽에 걸리는 것을 나눠 적는다. 새 카테고리를 추가할 때는
+# 세 블록 중 맞는 쪽 목록에 코드를 넣으면 된다.
+
+# 바닥에 서는 것 — 사람 키만한 가구다. 발밑과 벽이 보여야 크기가 읽힌다.
+[when CHAIR, DESK, SHELF, DRAWER_UNIT, PARTITION, FOOTREST background]
+the product stands on the floor of the room at its real size, a full-height piece of furniture,
+wooden floorboards or a plain rug run from the front of the frame to the wall behind it,
+the camera is at standing eye level looking slightly down, the whole piece is in frame,
+a window and a plain wall behind it give the room its depth,
+the floor and wall immediately around the product are completely empty,
+no other furniture within reach of it, its outline reads clearly against the empty wall.
+
+[when CHAIR, DESK, SHELF, DRAWER_UNIT, PARTITION, FOOTREST background negative]
+on a table, on a desk, on a shelf, miniature, dollhouse, toy furniture, tiny model,
+mug beside it, cup, books under it, held in a hand,
+# 실측: 의자 뒤에 나무 의자를 하나 더 만들어 실루엣이 겹쳤다
+another chair, second chair, extra chair, duplicate furniture, overlapping furniture,
+furniture directly behind the product, two of the same object, crowded room,
+
+# 벽에 걸리는 것 — 책상이 나오면 안 된다.
+[when WALL_CLOCK, PEGBOARD, PICTURE_FRAME background]
+the product hangs flat on a plain painted wall, the wall fills the frame behind it,
+soft daylight rakes across the wall from one side, a faint shadow under its lower edge,
+nothing else on the wall around it.
+
+[when WALL_CLOCK, PEGBOARD, PICTURE_FRAME background negative]
+desk, table, floor, standing on a surface, leaning against something, propped up,
+
+# 책상에 놓이는 것 — 대부분이 여기다.
+[when KEYBOARD, MOUSE, MOUSE_PAD, DESK_MAT, WRIST_REST, MONITOR, MONITOR_ARM, MONITOR_STAND, MONITOR_LIGHT, LAPTOP, TABLET background]
+the product sits on a wide desk of pale oak or light concrete,
+the desk surface runs from the front edge of the frame back to a plain painted wall,
+a soft contact shadow directly beneath it anchors it to the desk.
+
+[when CLOCK, MOOD_LIGHT, DESK_LAMP, SPEAKER, MICROPHONE, USB_HUB, WIRELESS_CHARGER, DESK_ORGANIZER, STORAGE_BOX, PLANT_POT, TURNTABLE, DESK_CALENDAR, PIXEL_DISPLAY, HEADPHONE_STAND, DESK_ORNAMENT, BOOKEND, BOOK_STAND, EARPHONES, HEADPHONES, PEN, PAPER_NOTEBOOK, PLANNER, HUMIDIFIER, FAN, POWER_STRIP, DESK_HOOK background]
+the product sits on a wide desk of pale oak or light concrete,
+the desk surface runs from the front edge of the frame back to a plain painted wall,
+a soft contact shadow directly beneath it anchors it to the desk.
+
+[background negative]
+white background, plain white backdrop, studio backdrop, seamless background,
+empty background, floating in empty space, cut-out, isolated on white,
+e-commerce catalogue photo, product mockup, flat lighting,
+# 마스크 안에 물건을 만들어 넣는 실패들 (실측)
+object underneath the product, stand under the object, pedestal, riser, box under the object,
+camera, camera lens, tripod, another product, second product, duplicated object,
+extra copy of the object, cluttered desk, pile of objects, stacked items,
+# 비율 실패 (실측: 제품이 화면을 채운 채 방을 만들자 책상이 부풀고 원근이 어긋났다)
+oversized furniture, giant desk, distorted perspective, wrong scale, props larger than the object,
+object cropped by the frame edge, object touching the frame edge, tilted horizon,
+text, logo, watermark, illustration, 3d render, CGI, oversaturated,
+# 붙여넣은 티 (실측: 제품만 스튜디오 조명이라 방과 따로 보였다)
+cut-and-paste composite, sticker effect, hard cut-out edge, white outline around the object,
+glowing rim around the object, object floating above the surface, no shadow, mismatched lighting,
+# 방이 폐가로 흐르는 실패 (2026-08-04 실측: 벗겨진 벽지·물때·잔해가 생겼다)
+dirty, grimy, stained, water damage, peeling paint, cracked wall, mould, rust, rotten wood,
+abandoned room, derelict, debris on the floor, rubble, scratched-up surface, messy,
+
+# ===========================================================================
+# 조화 (3단계). 배경을 만든 뒤 **화면 전체**를 낮은 strength 로 한 번 더 돌린다.
+#
+# 2단계까지는 제품 픽셀이 마스크로 얼어 있다. 그래서 스튜디오 조명 그대로인 제품이 창문
+# 조명의 방 위에 얹혀 "누끼 따서 붙인" 것처럼 보인다 — **프롬프트로는 못 고친다.** 얼어붙은
+# 픽셀을 다시 비출 수 없기 때문이다. 이 단계에서 마스크를 풀고 약하게(0.2~0.3) 다시 그려
+# 조명·색온도·입자·경계를 한 장의 사진으로 맞춘다. ControlNet 이 형태를 붙들어서 제품이
+# 다른 물건으로 바뀌지는 않는다.
+# ===========================================================================
+[harmonize]
+one photograph, a single continuous exposure of this whole scene,
+the object and the room share the same light source, the same colour temperature
+and the same film grain, light from the window falls across both object and surroundings,
+the object's edges sit softly against what is behind them,
+its shadow and reflection belong to the surface it stands on,
+consistent contrast and consistent white balance across the entire frame,
+natural photographic falloff toward the corners, unified colour grade,
+shot on one camera in one moment, indoor available light, realistic exposure.
+
+[harmonize negative]
+composite, collage, cut-out, pasted object, sticker, hard outline around the object,
+white halo, glowing edge, two different light sources, mismatched colour temperature,
+studio lighting on the object, flat lighting, floating object,
+different grain on the object, over-sharpened edges, oversaturated, illustration, 3d render,
+# 낮은 strength 로 전체를 다시 그리면 화면이 낡은 쪽으로 흐른다 (실측)
+dirty, grimy, stained, water damage, peeling paint, cracked wall, mould, rust, rotten wood,
+abandoned room, derelict, debris, rubble, heavy texture noise, gritty, decayed,
+
+[negative]
+# 브랜드 흔적 — 이 작업의 핵심이다. 원본 사진의 로고·모델명·라벨이 남으면 안 된다.
+logo, brand name, brand mark, wordmark, emblem, printed text, letters, numbers,
+typography, model number, serial label, sticker, price tag, barcode, watermark, signature,
+packaging box, retail packaging, product manual,
+# 사진이 아닌 것 / 원본을 그대로 베낀 티가 나는 것
+illustration, anime, cartoon, painting, concept art, 3d render, CGI, product mockup,
+cut-out on white background, isolated on plain white, catalogue studio backdrop,
+flat lighting, floating in empty space,
+# 흔한 실패
+toy-like, plastic appearance, fake materials, overly smooth surfaces, oversaturated,
+excessive bloom, duplicated object, extra product, deformed geometry, warped edges,
+melted shape, cropped product, product hidden behind clutter, blurry product,
+low detail, heavy noise, over-sharpened, overprocessed,

@@ -1,0 +1,62 @@
+# datasource는 Testcontainers @ServiceConnection이 채운다 — 여기 손으로 쓰지 않는다.
+# flyway가 진짜로 돌고 ddl-auto: validate가 엔티티↔스키마 불일치를 테스트마다 잡는다(ADR-0010 결정 5).
+spring:
+  datasource:
+    hikari:
+      # ⚠ 테스트 컨텍스트마다 풀이 하나씩 뜬다 — 기본 10이면 컨텍스트가 늘 때마다 10개씩 잡고,
+      # 컨테이너 Postgres의 max_connections(100)를 넘는 순간 **뒤늦게 뜨는 컨텍스트가 통째로
+      # 죽는다**(`FATAL: sorry, too many clients already`, 2026-08-06 실측 — ES 통합 테스트가
+      # 컨텍스트를 하나 더 만들면서 넘겼다). 테스트는 단일 스레드라 커넥션이 여러 개 필요 없다.
+      maximum-pool-size: 4
+  elasticsearch:
+    # ⚠ 이 줄이 없으면 Boot 기본값이 `localhost:9200`이고, **운영 ES로 가는 SSH 터널이 열려 있는
+    # 개발 머신에서는 그게 운영 ES다.** ES 통합 테스트(AbstractElasticsearchIntegrationTest)는
+    # @DynamicPropertySource로 컨테이너 주소를 덮어쓰므로 안전하지만, **ES와 무관한 컨텍스트도
+    # ApplicationReadyEvent에서 prepareIndex를 돌린다** — 정의 파일에 필드가 하나 늘어난 배포
+    # 브랜치에서 테스트를 돌리면 "매핑이 낡았다"고 판정해 **운영 별칭을 테스트 DB로 만든 0건
+    # 인덱스로 스왑하고 옛 운영 인덱스를 지운다**(2026-08-08 실측, DERO-499 — 운영 제품
+    # 검색이 통째로 0건이 됐다. 에러도 안 난다. 정본은 Postgres라 데이터 손실은 없고 재색인 1회로
+    # 복구되지만, 그 사이 검색은 죽어 있다).
+    # 닫힌 포트로 못 박아 터널이 열려 있어도 운영을 못 보게 한다 — 연결 실패는 prepareIndex가
+    # 삼키고 로그만 남기므로(ADR-0019 결정 6) ES를 안 쓰는 테스트는 그대로 초록이다.
+    uris: http://127.0.0.1:1
+  flyway:
+    enabled: true
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  security:
+    oauth2:
+      client:
+        provider:
+          kakao:
+            authorization-uri: https://kauth.kakao.com/oauth/authorize
+            token-uri: https://kauth.kakao.com/oauth/token
+            user-info-uri: https://kapi.kakao.com/v2/user/me
+            user-name-attribute: id
+        registration:
+          # 실제 카카오·구글을 안 부르는 테스트 전용 더미값 — registration이 없으면
+          # ClientRegistrationRepository 빈이 아예 안 만들어져 oauth2Login() 배선이 기동 시점에
+          # 깨진다(SecurityConfig). 값 자체는 형식만 맞으면 된다.
+          kakao:
+            client-id: test-kakao-client-id
+            client-secret: test-kakao-client-secret
+            client-authentication-method: client_secret_post
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/api/login/oauth2/code/{registrationId}"
+            scope: profile_nickname
+          google:
+            client-id: test-google-client-id
+            client-secret: test-google-client-secret
+            # 구글은 CommonOAuth2Provider.GOOGLE 프리셋이 redirect-uri 기본값
+            # `{baseUrl}/login/oauth2/code/{registrationId}`를 들고 있어서, 명시하지 않으면
+            # 카카오만 /api/ 아래로 가고 구글은 조용히 옛 경로로 간다(ADR-0005 결정 11).
+            redirect-uri: "{baseUrl}/api/login/oauth2/code/{registrationId}"
+            scope: email,profile
+
+app:
+  jwt:
+    # 테스트 전용 고정 키 — local과 값을 공유하지 않는다(용도 분리).
+    secret: test-only-secret-do-not-use-outside-tests-0123456789
+  oauth:
+    success-redirect-uri: http://localhost:3000/auth/callback

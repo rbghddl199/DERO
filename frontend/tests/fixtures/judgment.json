@@ -1,0 +1,198 @@
+{
+  "_readme": [
+    "호환성 판정 계약 fixture — 규칙 정본은 docs/context/compatibility.md, 위치 결정은 ADR-0004.",
+    "TS(vitest)와 Java(JUnit, Phase 3)가 같은 파일을 소비한다. 한쪽만 고치면 다른 쪽이 그날 깨진다.",
+    "결측(DB NULL)은 null로 적는다. VESA 목록의 결측은 빈 배열이다(product_vesa 정션 무행).",
+    "loadCapacityG/weightG의 null은 구현 타입이 비널이면 비양수(0)로 옮겨 소비해도 된다 — 판정은 비양수를 미등록으로 본다.",
+    "expected가 null이면 '판정 행 없음'(is_clamp_mountable=false)이다. INCOMPATIBLE과 다르다.",
+    "reasonContains는 사유 전체에 대한 부분 문자열 검사다. 문구 전문은 화면 표기라 여기 담지 않는다."
+  ],
+  "armDesk": [
+    {
+      "name": "물림 두께가 범위 안 — 적합",
+      "arm": { "isClampMountable": true, "clampMinMm": 10, "clampMaxMm": 40 },
+      "desk": { "topThicknessMm": 25, "edgeThicknessMm": 25 },
+      "expected": { "result": "FIT", "reasonCount": 0, "reasonContains": [] }
+    },
+    {
+      "name": "물림 두께 == 클램프 최소 — 경계 적합",
+      "arm": { "isClampMountable": true, "clampMinMm": 10, "clampMaxMm": 40 },
+      "desk": { "topThicknessMm": 10, "edgeThicknessMm": 10 },
+      "expected": { "result": "FIT", "reasonCount": 0, "reasonContains": [] }
+    },
+    {
+      "name": "물림 두께 == 클램프 최대 — 경계 적합",
+      "arm": { "isClampMountable": true, "clampMinMm": 10, "clampMaxMm": 40 },
+      "desk": { "topThicknessMm": 40, "edgeThicknessMm": 40 },
+      "expected": { "result": "FIT", "reasonCount": 0, "reasonContains": [] }
+    },
+    {
+      "name": "클램프 최소 미달 — 불가",
+      "arm": { "isClampMountable": true, "clampMinMm": 10, "clampMaxMm": 40 },
+      "desk": { "topThicknessMm": 8, "edgeThicknessMm": 8 },
+      "expected": {
+        "result": "INCOMPATIBLE",
+        "reasonCount": 1,
+        "reasonContains": ["8mm", "상판", "클램프 최소 10mm"]
+      }
+    },
+    {
+      "name": "두꺼운 엣지 몰딩 — 엣지가 클램프 최대 초과 (D21, 상판만 보면 거짓 적합)",
+      "arm": { "isClampMountable": true, "clampMinMm": 10, "clampMaxMm": 40 },
+      "desk": { "topThicknessMm": 18, "edgeThicknessMm": 45 },
+      "expected": {
+        "result": "INCOMPATIBLE",
+        "reasonCount": 1,
+        "reasonContains": ["45mm", "엣지 마감", "클램프 최대 40mm"]
+      }
+    },
+    {
+      "name": "베벨 엣지 — 상판이 더 두꺼워 상판이 물림 두께 (D21, 엣지만 보면 거짓 적합)",
+      "arm": { "isClampMountable": true, "clampMinMm": 10, "clampMaxMm": 20 },
+      "desk": { "topThicknessMm": 25, "edgeThicknessMm": 15 },
+      "expected": {
+        "result": "INCOMPATIBLE",
+        "reasonCount": 1,
+        "reasonContains": ["25mm", "상판", "클램프 최대 20mm"]
+      }
+    },
+    {
+      "name": "엣지 미등록 — 상판 두께로 COALESCE 후 적합 (직접 입력 책상)",
+      "arm": { "isClampMountable": true, "clampMinMm": 10, "clampMaxMm": 40 },
+      "desk": { "topThicknessMm": 30, "edgeThicknessMm": null },
+      "expected": { "result": "FIT", "reasonCount": 0, "reasonContains": [] }
+    },
+    {
+      "name": "엣지 미등록 — COALESCE한 상판이 최대 초과, 출처는 상판",
+      "arm": { "isClampMountable": true, "clampMinMm": 10, "clampMaxMm": 40 },
+      "desk": { "topThicknessMm": 50, "edgeThicknessMm": null },
+      "expected": {
+        "result": "INCOMPATIBLE",
+        "reasonCount": 1,
+        "reasonContains": ["50mm", "상판", "클램프 최대 40mm"]
+      }
+    },
+    {
+      "name": "클램프 물림 규격 미등록 — 조건부 (적합으로 떨어뜨리지 않는다)",
+      "arm": { "isClampMountable": true, "clampMinMm": null, "clampMaxMm": null },
+      "desk": { "topThicknessMm": 25, "edgeThicknessMm": 25 },
+      "expected": {
+        "result": "CONDITIONAL",
+        "reasonCount": 1,
+        "reasonContains": ["클램프 물림 규격 미등록"]
+      }
+    },
+    {
+      "name": "클램프 최대만 미등록 — 조건부 (한쪽 결측도 무한대 치환 금지)",
+      "arm": { "isClampMountable": true, "clampMinMm": 10, "clampMaxMm": null },
+      "desk": { "topThicknessMm": 25, "edgeThicknessMm": 25 },
+      "expected": {
+        "result": "CONDITIONAL",
+        "reasonCount": 1,
+        "reasonContains": ["클램프 물림 규격 미등록"]
+      }
+    },
+    {
+      "name": "클램프 마운트 불가 암 — 판정 행 없음 (불가가 아니다)",
+      "arm": { "isClampMountable": false, "clampMinMm": null, "clampMaxMm": null },
+      "desk": { "topThicknessMm": 100, "edgeThicknessMm": 100 },
+      "expected": null
+    },
+    {
+      "name": "클램프 규격이 있어도 게이트가 false면 판정하지 않는다",
+      "arm": { "isClampMountable": false, "clampMinMm": 10, "clampMaxMm": 40 },
+      "desk": { "topThicknessMm": 25, "edgeThicknessMm": 25 },
+      "expected": null
+    }
+  ],
+  "monitorArm": [
+    {
+      "name": "VESA 교집합 있고 하중 여유 — 적합",
+      "monitor": { "vesa": ["100x100"], "weightG": 4200 },
+      "arm": { "vesa": ["75x75", "100x100"], "loadCapacityG": 5000 },
+      "expected": { "result": "FIT", "reasonCount": 0, "reasonContains": [] }
+    },
+    {
+      "name": "무게 == 허용 하중 — 경계 적합",
+      "monitor": { "vesa": ["100x100"], "weightG": 5000 },
+      "arm": { "vesa": ["100x100"], "loadCapacityG": 5000 },
+      "expected": { "result": "FIT", "reasonCount": 0, "reasonContains": [] }
+    },
+    {
+      "name": "VESA 불일치 — 불가",
+      "monitor": { "vesa": ["75x75"], "weightG": 4200 },
+      "arm": { "vesa": ["100x100"], "loadCapacityG": 5000 },
+      "expected": {
+        "result": "INCOMPATIBLE",
+        "reasonCount": 1,
+        "reasonContains": ["VESA 75×75", "불일치"]
+      }
+    },
+    {
+      "name": "허용 하중 초과 — 불가",
+      "monitor": { "vesa": ["100x100"], "weightG": 7100 },
+      "arm": { "vesa": ["100x100"], "loadCapacityG": 5000 },
+      "expected": {
+        "result": "INCOMPATIBLE",
+        "reasonCount": 1,
+        "reasonContains": ["모니터 7.1kg", "허용 5kg"]
+      }
+    },
+    {
+      "name": "모니터가 여러 규격을 지원하고 그중 하나가 맞으면 적합",
+      "monitor": { "vesa": ["75x75", "200x200"], "weightG": 3000 },
+      "arm": { "vesa": ["200x200"], "loadCapacityG": 5000 },
+      "expected": { "result": "FIT", "reasonCount": 0, "reasonContains": [] }
+    },
+    {
+      "name": "VESA 불일치 + 하중 초과 — 사유 2건",
+      "monitor": { "vesa": ["200x200"], "weightG": 9000 },
+      "arm": { "vesa": ["100x100"], "loadCapacityG": 5000 },
+      "expected": {
+        "result": "INCOMPATIBLE",
+        "reasonCount": 2,
+        "reasonContains": ["VESA 200×200", "모니터 9kg", "허용 5kg"]
+      }
+    },
+    {
+      "name": "모니터 VESA 미등록 — 조건부",
+      "monitor": { "vesa": [], "weightG": 4200 },
+      "arm": { "vesa": ["100x100"], "loadCapacityG": 5000 },
+      "expected": {
+        "result": "CONDITIONAL",
+        "reasonCount": 1,
+        "reasonContains": ["VESA 규격 미등록"]
+      }
+    },
+    {
+      "name": "암 허용 하중 미등록 — 조건부",
+      "monitor": { "vesa": ["100x100"], "weightG": 4200 },
+      "arm": { "vesa": ["100x100"], "loadCapacityG": null },
+      "expected": {
+        "result": "CONDITIONAL",
+        "reasonCount": 1,
+        "reasonContains": ["무게·허용 하중 규격 미등록"]
+      }
+    },
+    {
+      "name": "VESA·무게 양쪽 미등록 — 조건부 사유 2건",
+      "monitor": { "vesa": [], "weightG": null },
+      "arm": { "vesa": [], "loadCapacityG": null },
+      "expected": {
+        "result": "CONDITIONAL",
+        "reasonCount": 2,
+        "reasonContains": ["VESA 규격 미등록", "무게·허용 하중 규격 미등록"]
+      }
+    },
+    {
+      "name": "VESA 미등록 + 하중 초과 — 확인된 불가가 조건부를 이긴다",
+      "monitor": { "vesa": [], "weightG": 7100 },
+      "arm": { "vesa": ["100x100"], "loadCapacityG": 5000 },
+      "expected": {
+        "result": "INCOMPATIBLE",
+        "reasonCount": 2,
+        "reasonContains": ["모니터 7.1kg", "허용 5kg", "VESA 규격 미등록"]
+      }
+    }
+  ]
+}

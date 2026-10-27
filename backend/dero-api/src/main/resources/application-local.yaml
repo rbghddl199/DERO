@@ -1,0 +1,68 @@
+spring:
+  config:
+    # 개인 로컬 시크릿. optional: 이라 파일이 없어도 부팅이 안 깨진다.
+    # 키는 셸 스타일이 아니라 Spring 프로퍼티 키여야 한다 — .env.local.example 참고.
+    import: "optional:file:./.env.local[.properties]"
+  # 로컬 접속 정보 명시 주입 (2026-07-29, spring-boot-docker-compose 제거 — 승인 박동규).
+  # 값은 루트 .env의 POSTGRES_* 로컬 더미와 짝이다 — 한쪽을 바꾸면 같이 바꾼다.
+  # 컨테이너는 자동 기동 안 된다: 부팅 전 레포 루트에서 docker compose -f compose.data.yaml up -d 필요.
+  datasource:
+    url: jdbc:postgresql://localhost:55432/dero_db
+    username: deroroot
+    password: derodero
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  security:
+    oauth2:
+      client:
+        # client-id·secret은 .env.local에서 온다(위 spring.config.import) — 이 파일엔 안 둔다.
+        # 카카오는 Spring 내장 provider 프리셋이 없어(구글과 달리) 이 블록이 없으면
+        # "Provider ID must be specified for client registration 'kakao'"로 부팅이 죽는다
+        # — application-test.yaml·application-prod.yaml과 같은 상수 블록(2026-07-29 실측).
+        provider:
+          kakao:
+            authorization-uri: https://kauth.kakao.com/oauth/authorize
+            token-uri: https://kauth.kakao.com/oauth/token
+            user-info-uri: https://kapi.kakao.com/v2/user/me
+            user-name-attribute: id
+        registration:
+          kakao:
+            client-authentication-method: client_secret_post
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/api/login/oauth2/code/{registrationId}"
+            scope: profile_nickname
+          google:
+            # 구글은 CommonOAuth2Provider.GOOGLE 프리셋이 redirect-uri 기본값
+            # `{baseUrl}/login/oauth2/code/{registrationId}`를 들고 있어서, 명시하지 않으면
+            # 카카오만 /api/ 아래로 가고 구글은 조용히 옛 경로로 간다(ADR-0005 결정 11).
+            redirect-uri: "{baseUrl}/api/login/oauth2/code/{registrationId}"
+            scope: email,profile
+
+# 로컬만 연다(공통은 닫혀 있다).
+springdoc:
+  swagger-ui:
+    enabled: true
+  api-docs:
+    enabled: true
+
+app:
+  cors:
+    allowed-origins: http://localhost:3000
+  storage:
+    # 기본값은 local 유지(로컬 seed DB + mode=local로 작업하는 팀원 영향 없음). 원격 DB를
+    # 포트포워딩으로 볼 때만 본인 .env.local에 APP_STORAGE_MODE=s3를 추가해 전환한다 —
+    # 원격 데이터의 asset_key/image_key는 실제로 S3에 있어(운영 app.storage.mode: s3와 동일),
+    # local 모드로 presign하면 이 머신 디스크(./data/uploads)를 찾다가 전부 404난다.
+    mode: ${APP_STORAGE_MODE:local}
+  jwt:
+    # 로컬 전용 평문 고정 키. 로컬 DB에서만 유효한 토큰이라 유출 위험이 없고,
+    # 팀원마다 키가 달라 생기는 혼란을 없앤다(ADR-0010 결정 3). 운영 값은 .env의 JWT_SECRET.
+    secret: local-only-dev-secret-do-not-use-in-production-0123456789
+  cookie:
+    # http://localhost는 HTTPS가 아니라 Secure 쿠키가 안 실린다 — 로컬만 끈다.
+    secure: false
+  oauth:
+    # 로그인 성공 핸들러가 리프레시 쿠키를 굽은 뒤 리다이렉트하는 고정 프론트 경로(ADR-0005 결정 8).
+    success-redirect-uri: http://localhost:3000/auth/callback

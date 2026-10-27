@@ -1,0 +1,10 @@
+# 이미지 안에서 새로 빌드하므로 호스트 산출물은 컨텍스트에 넣지 않는다.
+.gradle/
+build/
+bin/
+out/
+
+# 로컬 개발 전용 — spring-boot-docker-compose가 bootRun에서만 쓴다.
+compose.yaml
+
+*.md

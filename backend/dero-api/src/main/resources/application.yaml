@@ -1,0 +1,135 @@
+spring:
+  application:
+    name: dero-api
+  elasticsearch:
+    # 제품 검색 인덱스(ADR-0019). 값은 prod에서 compose.yaml의 SPRING_ELASTICSEARCH_URIS로 온다 —
+    # 기본값은 로컬 compose.observability.yaml이 127.0.0.1에 묶는 주소다.
+    # datasource·redis와 달리 공용 파일에 기본값을 두는 이유: 검색이 죽어도 앱은 뜨는 게 맞고
+    # (결정 6), 프로파일마다 값을 강제하면 그 원칙과 반대로 부팅이 설정에 묶인다.
+    uris: ${SPRING_ELASTICSEARCH_URIS:http://localhost:9200}
+  jpa:
+    hibernate:
+      # 스키마 정본은 docs/context/erd.md — Hibernate가 스키마를 만들지 못하게 고정한다.
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        default_batch_fetch_size: 100
+
+# nginx가 리버스 프록시로 넘기는 접두사는 `/api`뿐이라(deployment.md 라우팅 표) 액추에이터도
+# 그 아래로 넣는다 — 컨트롤러들이 `/api/v1/...`을 직접 들고 있는 것과 같은 결이다.
+# 헬스체크 주소는 `/api/actuator/health`이고 Jenkinsfile·compose.yaml의 주석과 짝이다.
+management:
+  health:
+    elasticsearch:
+      # ⚠ 끄지 않으면 ES가 안 뜬 서버에서 /api/actuator/health가 DOWN(503)이 되고,
+      # Jenkins Verify 스테이지가 그 주소를 치므로 **배포가 통째로 실패한다.**
+      # compose.observability.yaml은 Jenkins가 적용하지 않아 ES 부재는 정상 상태다.
+      # ADR-0019 결정 6이 정한 것과 같은 선 긋기 — ES가 죽으면 검색만 죽고 앱은 산다.
+      # 검색 계층의 생사는 헬스체크가 아니라 Prometheus/Grafana가 본다(ADR-0020).
+      enabled: false
+  endpoints:
+    web:
+      base-path: /api/actuator
+      exposure:
+        # ⚠ prometheus를 여기 넣는 순간 nginx가 /api/를 통째로 프록시하므로
+        # https://www.dero.life/api/actuator/prometheus가 인터넷에 공개된다(JVM 상태·엔드포인트별
+        # 호출량·DB 커넥션 풀까지). 짝이 되는 nginx `location = /api/actuator/prometheus { deny all; }`를
+        # 먼저 넣어야 한다 — 절차와 검증 명령은 docs/context/observability.md §4.
+        # 수집기는 도커 네트워크로 backend:8080을 직접 긁으므로 deny의 영향을 받지 않는다.
+        include: health,prometheus
+  prometheus:
+    metrics:
+      export:
+        # Boot 4.1은 지표 익스포트가 옵트인이다 — 이 줄이 없으면
+        # PrometheusMetricsExportAutoConfiguration이 `management.defaults.metrics.export.enabled is
+        # considered false`로 백오프하고, 레지스트리 빈이 없어 /prometheus가 조용히 404다
+        # (2026-08-04 실측. Boot 3 튜토리얼에는 이 줄이 없다).
+        enabled: true
+  metrics:
+    distribution:
+      # 응답시간 p95·p99. 평균(_sum/_count)은 long-tail을 숨긴다 — GLB·상상도 업로드가 그 대상이다
+      # (ADR-0020 결정 9).
+      # percentiles-histogram이 아니라 percentiles다: 인스턴스가 1대라 서버 사이드 재집계가
+      # 필요 없고, 히스토그램을 켜면 uri별 시계열이 버킷 개수만큼 곱해진다. 대가는 이 값이
+      # 재집계 불가라는 것 — Prometheus에서 여러 uri의 p95를 합산하면 틀린 수가 나온다.
+      percentiles:
+        http.server.requests: 0.95,0.99
+
+# 안전 기본값 — 여기서는 닫아두고 local 프로파일에서만 연다.
+# 프로파일 지정을 빠뜨려도 운영에 Swagger UI가 열리지 않는다(ADR-0010 결정 2).
+springdoc:
+  swagger-ui:
+    enabled: false
+  api-docs:
+    enabled: false
+
+app:
+  cors:
+    # 안전 기본값 — 빈 값이면 크로스 오리진 요청을 전부 막는다. local 프로파일에서만 연다.
+    # 운영은 nginx 뒤 동일 오리진이라 CORS 자체가 필요 없다(ADR-0005).
+    allowed-origins: ""
+  storage:
+    # presign 발급기(PresignPort) 선택. 안전 기본값은 local — S3 자격증명이 없어도 부팅하고
+    # 2단계 업로드 흐름이 그대로 돈다(WAS가 서명하고 LocalFileController가 받는다).
+    # S3를 붙이는 날 프로파일에서 s3로 덮는다.
+    mode: local
+    # 오브젝트 스토리지 포트(StoragePort)의 로컬 디스크 구현체가 쓰는 base 디렉터리. S3가 생기면
+    # 구현체만 갈아끼우고 이 설정은 없어진다.
+    local-dir: ./data/uploads
+    # mode=local의 서명 키. S3 없이 도는 동안의 임시 값이고 로컬 볼륨 접근만 가른다 —
+    # 운영에서 mode=local을 계속 쓸 거면 이 값을 환경변수로 덮을 것.
+    local-sign-secret: local-dev-only-file-sign-secret-0123456789
+    # mode=local이 발급하는 URL의 오리진.
+    local-base-url: http://localhost:8080
+    # 이미지 안정 공개 URL(ADR-0035, PublicImageUrlResolver)의 오리진. presign과 달리 모드와
+    # 무관하게 WAS가 응답하는 우리 도메인이다. 운영 값은 prod 프로파일이 덮는다.
+    public-base-url: http://localhost:8080
+    s3:
+      # presigned URL 발급용(product 대표이미지 업로드). local은 .env.local, 운영은 실제
+      # 환경변수(compose.yaml 보간)에서 온다 — 둘 다 Spring 프로퍼티 경유라 S3Config가
+      # AWS SDK 기본 자격증명 체인 대신 이 값들을 명시로 받는다.
+      bucket: ${AWS_S3_BUCKET:}
+      region: ${AWS_REGION:}
+      access-key: ${AWS_ACCESS_KEY_ID:}
+      secret-key: ${AWS_SECRET_ACCESS_KEY:}
+  image:
+    # 하루에 뽑을 수 있는 상상도 장 수(ADR-0015 결정 8). 단위는 회차가 아니라 장이다.
+    # 업로드 1회가 1장이므로(2026-08-06 3→1 개정) 7 = 7회 — 21이던 값을 회차 수 그대로 옮긴 것이다.
+    daily-quota: 7
+    generation:
+      # 상상도 생성기(ImageGenerationPort) 선택. 안전 기본값은 stub — 외부 API 키 없이도 부팅하고
+      # 파이프라인 전체(게이트→큐→행 기록→PUBLIC)가 그대로 돈다. 운영은 gms를 쓴다.
+      mode: stub
+      # 값은 환경변수에서만 온다 — 키 리터럴을 이 파일에 적지 않는다.
+      # 비어 있는 채로 mode=gms면 GmsImageGenerationConfig가 기동을 세운다(fail-fast).
+      api-key: ${GMS_API_KEY:}
+      # OpenAI 호환 오리진. 프록시(예: 사내 GMS)를 쓰면 IMAGE_GENERATION_BASE_URL로 바꾼다.
+      base-url: ${IMAGE_GENERATION_BASE_URL:https://api.openai.com}
+      # 요청 방식. 기본 edits는 사용자의 배치 스크린샷을 입력 이미지로 함께 보낸다 — 그래야
+      # "내가 배치한 그대로가 실사로"가 성립한다. GMS 프록시가 multipart를 거부하면(실측 안 됨)
+      # 재배포 없이 IMAGE_GENERATION_REQUEST_TYPE=generations로 내린다(텍스트 프롬프트만).
+      request-type: ${IMAGE_GENERATION_REQUEST_TYPE:edits}
+      model: gpt-image-2
+      # 출력 해상도. auto면 edits 경로에서 스크린샷의 실제 픽셀 크기로 계산한다(OutputImageSize) —
+      # 스크린샷은 캔버스를 그대로 뽑은 것이라 종횡비가 가변이고, 고정값(1024x1024)을 보내면 상류가
+      # 그 비율로 리프레임해 "내가 배치한 그대로"가 깨진다. 명시값을 넣으면 그 값이 그대로 나간다.
+      size: auto
+      connect-timeout: 5s
+      # 이미지 생성은 수십 초가 걸린다 — 흔한 5~30초를 그대로 두면 정상 응답을 타임아웃으로 버린다.
+      # 120s도 짧다: OpenAI 문서가 복잡한 프롬프트에 최대 2분을 적는다. 이건 요청 1건당 상한이고,
+      # 업로드가 부르는 총 시간은 이 값 × IMAGES_PER_UPLOAD다. 아래 worker.processing-timeout(10m)
+      # 보다 그 총합이 작아야 한다 — 크면 워커가 유실로 보고 되돌린 작업이 뒤늦게 또 응답한다.
+      read-timeout: 300s
+    worker:
+      # WAS 안 큐 소비 루프. 안전 기본값은 꺼짐 — 켜는 프로세스만 Redis 큐에 묶이므로 테스트·로컬이
+      # 기본으로 붙지 않는다. 운영은 application-prod.yaml이 켠다.
+      enabled: false
+      # BLMOVE 블로킹 시간. 이 주기마다 스위퍼도 한 번 돈다.
+      poll-timeout: 2s
+      # 처리중 리스트에 이만큼 남아 있으면 유실로 보고 대기열로 되돌린다(ADR-0015 결정 4).
+      # 10분은 추측이다 — GMS 생성 시간을 실측한 뒤 조정한다.
+      processing-timeout: 10m
+  cookie:
+    # 안전 기본값 — HTTPS가 아니면 브라우저가 Secure 쿠키를 안 실어 보낸다. local만 false로 끈다.
+    secure: true

@@ -1,0 +1,12 @@
+-- V3 — placement.thumbnail_key 신설.
+-- docs/context/erd.md(스키마 정본)에서 파생한다 — 이 컬럼은 2026-07-29에 이미 승인됐고(개정표
+-- "`placement`.thumbnail_key 신설 (2026-07-29, 승인 박동규)") 정본 표에도 실려 있는데
+-- (`thumbnail_key | VARCHAR(1024) | 허용`), V1 baseline·V2 어디에도 실제 컬럼이 들어가지 않았다.
+-- 문서만 앞서 간 상태를 DDL이 따라잡는 것이고 스키마 설계를 새로 바꾸는 것이 아니다.
+-- erd.md는 손대지 않는다(동결 — docs/HARNESS-RULES.md §4).
+--
+-- 시뮬레이터 캔버스 스크린샷의 object key다. 내 작업실 목록 카드에 쓰이고, 업로드 시 AI 상상도
+-- 생성의 입력이 된다(erd.md "thumbnail_key와 AI 상상도는 서로 다른 이미지다"). 배치 생성 시점엔
+-- 채울 값이 없어 nullable이고, 2단계 presign으로 캡처한 뒤에 값이 생긴다.
+-- 다른 `_key` 컬럼(asset_key·profile_image_key)과 같은 VARCHAR(1024)다.
+ALTER TABLE placement ADD COLUMN thumbnail_key VARCHAR(1024);

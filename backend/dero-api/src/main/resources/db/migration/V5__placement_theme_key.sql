@@ -1,0 +1,19 @@
+-- V5 — placement.theme_key 신설.
+-- docs/context/erd.md(스키마 정본)에서 파생한다 — 이 컬럼은 2026-08-03에 이미 승인됐고
+-- (개정표 "`placement`.theme_key 추가 (2026-08-03, 승인 박동규)") 정본 표에도 실려 있다.
+-- 문서만 앞서 간 상태를 DDL이 따라잡는 것이고 스키마 설계를 새로 바꾸는 것이 아니다.
+-- erd.md는 손대지 않는다(동결 — docs/HARNESS-RULES.md §4).
+--
+-- 룸 테마(벽 3면 + 바닥의 룩) 선택값이다(ADR-0021 결정 3). placement는 이미 방 상태를 저장하는데
+-- (is_wall_*_on·is_room_light_on) 조명 on/off 하나를 저장한 논리대로면 방 전체 룩은 더더욱 저장해야
+-- 한다 — 저장 안 하면 재로드·공유에서 남의 화면에 다른 방이 나온다.
+--
+-- 마스터 테이블(theme)을 만들지 않는다: 룩의 정본은 프론트 테마 코드 모듈 폴더명
+-- (frontend/src/three/themes/<key>/)이고, DB에 또 두면 정본이 둘로 갈린다(asset.finish가 같은
+-- 이유로 테이블을 접었다). 값 집합을 enum·CHECK로 닫지도 않는다 — 닫으면 테마 하나 늘릴 때마다
+-- 백엔드 배포가 붙어 "코드 갈아끼우기"라는 결정 1이 무뎌진다. WAS는 이 값으로 아무 판정도 하지
+-- 않으므로 검증은 형식(^[a-z0-9-]{1,30}$)까지고, 알 수 없는 키는 프론트가 neutral로 폴백한다.
+--
+-- NOT NULL + DEFAULT라 기존 행은 즉시 백필된다 — PG 11+는 기본값을 카탈로그에만 적고 테이블을
+-- 재작성하지 않으므로 잠금 시간이 행 수에 비례하지 않는다.
+ALTER TABLE placement ADD COLUMN theme_key VARCHAR(30) NOT NULL DEFAULT 'neutral';

@@ -1,0 +1,2458 @@
+/* 디자인 토큰(DESIGN-SYSTEM) — 중립 오프화이트 UI, 웜옐로우 액센트는 HUD 전용, 글래스 패널 최대 3장·블러 16px 이하, 캔버스는 색상 중립 유지 */
+:root {
+  --bg: #fafaf9;
+  --gray-50: #f7f7f6;
+  --gray-200: #e6e5e3;
+  --gray-400: #b7b5b1;
+  --gray-600: #6c6a66;
+  --gray-800: #33322f;
+  --primary: #e8a93a;
+  --primary-600: #c98a24;
+  /* 선택/활성 상태 전용 연한 노랑 — 저장 버튼 등 주요 CTA(--primary)와 분리해서
+     쓴다(2026-07-27, 레일·카테고리·시점 탭의 "선택됨" 표시만 옅게). */
+  --select-accent: #fce4a6;
+  --danger: #e5484d;
+  /* 판정 시맨틱 앰버 = 조건부 (DESIGN-SYSTEM §1.4 D8). 3색 HEX는 문서상 미확정 — 잠정값 */
+  --warn: #c77700;
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.55);
+  --glass-shadow: 0 8px 30px rgba(40, 38, 60, 0.12);
+  --radius: 16px;
+  --font:
+    'Pretendard', 'Pretendard Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  height: 100%;
+  min-width: 700px;
+  min-height: 600px;
+  font-family: var(--font);
+  color: var(--gray-800);
+  -webkit-font-smoothing: antialiased;
+}
+#app {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+#scene {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  z-index: 0;
+}
+/* Restrained vignette (W7): frames the product, sits above the canvas but below
+   the glass HUD (z-index 10) so panels stay crisp. Neutral (no colour cast). */
+#app::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 75% 75% at 50% 46%,
+    transparent 60%,
+    rgba(20, 18, 26, 0.18) 100%
+  );
+}
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+.muted {
+  color: var(--gray-600);
+}
+
+/* screens */
+.ui-root {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+}
+.screen {
+  position: absolute;
+  inset: 0;
+  display: none;
+}
+.screen.active {
+  display: block;
+}
+
+/* select + loading: centered card over a soft off-white wash */
+.screen-loading.active {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(
+    120% 120% at 50% 0%,
+    rgba(232, 169, 58, 0.12),
+    rgba(250, 250, 249, 0.86) 55%
+  );
+  pointer-events: auto;
+}
+
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  border-radius: var(--radius);
+}
+
+.hero-card {
+  padding: 40px 44px;
+  max-width: 460px;
+  text-align: center;
+}
+.h2 {
+  font-size: 20px;
+  font-weight: 650;
+  margin: 0 0 18px;
+}
+.hero-card .muted {
+  font-size: 15px;
+  line-height: 1.6;
+  margin: 0 0 24px;
+}
+.spinner {
+  width: 32px;
+  height: 32px;
+  margin: 0 auto 18px;
+  animation: spin 1s linear infinite;
+}
+.spinner-track {
+  fill: none;
+  stroke: var(--gray-200);
+  stroke-width: 3;
+}
+.spinner-arc {
+  fill: none;
+  stroke: var(--primary);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 113;
+  stroke-dashoffset: 85;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.btn {
+  font-family: inherit;
+  border: none;
+  cursor: pointer;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 12px 22px;
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease;
+}
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.btn-primary {
+  background: var(--primary);
+  color: var(--gray-800);
+}
+.btn-primary:hover {
+  background: var(--primary-600);
+  transform: translateY(-1px);
+}
+.btn-secondary {
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--gray-800);
+}
+.btn-secondary:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+.btn-danger {
+  background: var(--danger);
+  color: #fff;
+}
+.btn-danger:hover {
+  background: #c93338;
+  transform: translateY(-1px);
+}
+
+/* sim HUD (2026-07-27 개정, 오늘의집류 3D 플래너 참고) — 상단 툴바(실행취소/다시실행
+   + 저장/나가기) + 좌측 카테고리 레일(제품·조명·시점, 클릭 시 레일 옆 플라이아웃 하나만
+   뜬다) + 우측 선택 상세 패널(아이템 선택 시 자동 노출, 토글 없음). */
+.screen-sim {
+  pointer-events: none;
+}
+.hud {
+  pointer-events: auto;
+  padding: 14px;
+}
+
+/* --- 상단 흰 네비바 --- */
+/* 천장(뷰포트 맨 위)에 딱 붙는 풀폭 바(2026-07-27, 떠 있는 버튼 두 개 → 풀폭 바로
+   개정) — HUD 글래스 톤이 아니라 불투명 흰색(요청 사양). 좌측 로고 / 우측 액션
+   그룹으로 양끝 정렬(2026-07-27, 로고 추가). */
+.editor-topbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(20, 18, 26, 0.08);
+  box-sizing: border-box;
+}
+.editor-topbar-logo {
+  height: 22px;
+  width: auto;
+}
+.editor-topbar-logo-button {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.editor-topbar-logo-button:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+/* 로고 옆 제목 — 수정 버튼으로 인라인 편집(2026-07-27). */
+.editor-topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.editor-topbar-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gray-800);
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.editor-topbar-title-input {
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gray-800);
+  width: 200px;
+  padding: 4px 8px;
+  border: 1px solid var(--gray-200);
+  border-radius: 6px;
+  background: var(--gray-50);
+}
+.editor-topbar-title-edit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--gray-400);
+  cursor: pointer;
+}
+.editor-topbar-title-edit:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--gray-600);
+}
+.editor-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+/* 앱 공용 .btn보다 살짝 작게 — 다른 화면(모달 등)의 .btn 크기에는
+   영향을 주지 않도록 이 버튼에만 붙는 보조 클래스. 흰 바 배경이라 글자는 어두운 톤
+   (이전엔 투명 바탕 위라 흰 글자였다 — 배경이 흰색으로 바뀌며 반전, 2026-07-27). */
+.editor-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  padding: 9px 16px;
+}
+.editor-saved-at {
+  font-size: 12px;
+  color: var(--gray-600);
+  margin-right: 4px;
+}
+/* 회색 배경 태그 — 배치 개수 등 숫자 카운트 표시 공통(EditorTopBar·EstimatePanel). */
+.count-tag {
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gray-600);
+  background: var(--gray-200);
+  border-radius: 999px;
+  padding: 3px 10px;
+  margin-right: 4px;
+}
+/* 조명(방 조명)·외곽선 on/off — 켜짐은 배경 채움·글로우 없이 아이콘·글자를 그냥 노란
+   텍스트로만 표시한다(2026-07-27, 글로우 제거 — 과했다는 피드백). 라벨과 ON/OFF는
+   한 줄이 아니라 라벨 바로 아래 줄로 쌓는다. */
+.topbar-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--gray-700);
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+.topbar-toggle:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+.topbar-toggle-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+.topbar-toggle-state {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--gray-400);
+}
+.topbar-toggle.on {
+  color: var(--primary);
+}
+.topbar-toggle.on .topbar-toggle-state {
+  color: var(--primary);
+}
+/* 확대/축소 — 토글이 아니라 단발 액션 쌍이라 라벨 없이 아이콘만, 알약 하나로 묶는다
+   (2026-07-27 신규). */
+.topbar-zoom-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.04);
+}
+.topbar-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--gray-700);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.topbar-icon-btn:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+/* --- 좌측 카테고리 레일 + 플라이아웃 --- */
+/* 상단 네비바(높이 64px)가 화면 맨 위를 차지하므로 top:84px(64+20)부터 시작 — 20px는
+   네비바 바로 아래 여백 (2026-07-27, 풀폭 네비바 도입). */
+.editor-sidebar {
+  position: absolute;
+  left: 20px;
+  top: 84px;
+  bottom: 20px;
+  display: flex;
+  gap: 12px;
+}
+/* align-self:center(2026-08-06, 사용자 요청 "왼쪽 toolbar 가운데 세로 정렬") — 예전
+   flex-start는 레일이 .editor-sidebar의 top:84px~bottom:20px 전체 구간 중 맨 위에만
+   붙어 아래가 허전했다. 옆의 플라이아웃(.editor-rail-flyout)은 align-self를 안 줘서
+   기본값 stretch로 여전히 전체 높이를 채운다 — 둘은 독립된 align-self라 레일만 중앙으로
+   옮겨도 플라이아웃 높이·위치는 그대로다. */
+.editor-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-self: center;
+  padding: 10px;
+}
+/* 살짝 줄인 크기(2026-07-27) — 폭 68→60px, 세로 패딩 10→8px, 글자 12→11px. */
+.rail-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  width: 60px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 8px 6px;
+  border: none;
+  border-radius: 13px;
+  background: transparent;
+  color: var(--gray-700);
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+.rail-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+.rail-btn.active {
+  background: var(--select-accent);
+  color: var(--gray-800);
+}
+.rail-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  background: transparent;
+}
+/* 실행 취소/다시 실행(단발 액션)과 카테고리(제품·벽·시점) 사이 구분선. */
+.editor-rail-divider {
+  height: 1px;
+  margin: 4px 6px;
+  background: rgba(0, 0, 0, 0.12);
+}
+/* 플라이아웃 — 레일 바로 옆, 세로로 화면 대부분을 쓴다. 내용은 카테고리별로 바뀐다.
+   배경은 .glass 기본(--glass-bg 0.72)보다 진하게 덮어쓴다 — 3D 씬 위에 뜨는 패널이라 제품
+   썸네일·카테고리 이름이 뒤 물체와 겹쳐 읽기 어려웠다(2026-07-31 사용자 요청). 완전 불투명은
+   아니라 블러(.glass의 backdrop-filter)는 그대로 살려 둔다. */
+.editor-rail-flyout {
+  max-height: 100%;
+  overflow-y: auto;
+  min-width: 260px;
+  background: rgba(255, 255, 255, 0.97);
+}
+.editor-rail-flyout::-webkit-scrollbar {
+  width: 12px;
+}
+.editor-rail-flyout::-webkit-scrollbar-track {
+  background: color-mix(in srgb, var(--color-neutral-200) 60%, transparent);
+  background-clip: content-box;
+  border: 4px solid transparent;
+  border-radius: 999px;
+}
+.editor-rail-flyout::-webkit-scrollbar-thumb {
+  background: var(--color-primary-300);
+  background-clip: content-box;
+  border: 4px solid transparent;
+  border-radius: 999px;
+}
+/* 시점(카메라 프리셋) — 6개뿐이라 제품/벽처럼 레일 전체 높이로 늘어난 빈 유리판이
+   아니라 내용만큼만 차지하는 작은 팝업으로(2026-07-27, "UI가 이상하다" 피드백). */
+.editor-rail-flyout-compact {
+  align-self: flex-start;
+  max-height: none;
+  min-width: 0;
+  width: 200px;
+}
+/* 제품 플라이아웃은 이 바깥 컨테이너째로 스크롤하지 않는다 — 제목·검색·카테고리 그리드는
+   고정, 아래 갤러리(.hud-gallery)만 내부 스크롤(무한 스크롤용 sentinel도 그 안에 있다). */
+.editor-rail-flyout-product {
+  display: flex;
+  overflow: hidden;
+}
+/* 등장/퇴장 애니메이션 없음(2026-08-03 사용자 요청으로 제거) — 카테고리를 누르면 즉시 뜨고
+   닫으면 즉시 사라진다. 상단바 메뉴 전환이 먼저 같은 이유로 무연출로 바뀐 전례(2026-08-02,
+   `PageTransition.tsx`)와 같은 방향. `EditorSidebar.tsx`의 `flyout` 상태도 이제
+   `SidebarCategory | null` 하나뿐 — 예전엔 퇴장 애니메이션이 끝날 때까지 렌더를 유지하는
+   `phase:'in'|'out'` 2단 상태였지만 애니메이션 자체가 없어져 더 이상 필요 없다. */
+
+/* --- 우측 컬럼(견적서 + 선택 상세) --- */
+/* EstimatePanel·SelectedItemPanel을 각자 독립 position:absolute로 두면 서로 다른
+   조건(배치 유무 vs 선택 유무)으로 동시에 커질 수 있어 겹칠 수 있었다(2026-08-06,
+   사용자 피드백 "겹치지 않게 꽉 채우게"). 이제 이 컬럼 하나가 네비바 아래~화면 하단
+   (top:84px ~ bottom:20px)을 갖고 flex column으로 자식을 세로로 쌓아 겹침이
+   구조적으로 불가능하다. */
+.editor-right-column {
+  position: absolute;
+  top: 84px;
+  right: 20px;
+  bottom: 20px;
+  width: 268px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+/* 견적서(`.editor-estimate-panel`)는 내용 크기만큼만 차지하고, 선택 패널은
+   `margin-top:auto`로 컬럼 안의 남는 공간을 위로 밀어내 항상 컬럼 바닥(=화면 우측 하단)에
+   붙는다. **2026-08-07 원복** — 2026-08-06엔 `flex:1 1 0`으로 컬럼의 나머지 전부를 채우게
+   했었지만(사용자 요청 "제품 상세 선택 남은 부분 꽉채워"), 같은 날 추가한 max-height 상한을
+   300px로 낮추면서(위 항목) 컬럼에 남는 공간이 패널 **아래**에 빈 여백으로 남아 "우측
+   하단 고정"처럼 안 보이는 문제가 생겼다(사용자 요청 "선택 아이템 창은 우측 하단에
+   고정되어야 해") — `flex-grow`는 아이템을 그 자리에서 키울 뿐 아래로 밀지 않는다.
+   `margin-top:auto`는 반대로 남는 공간을 패널 **위**에 남겨 바닥에 딱 붙인다(2026-08-06
+   이전과 같은 방식). 내용이 300px보다 커지는 경우에만 min-height:0 + overflow-y:auto가
+   내부 스크롤로 흡수한다. */
+.editor-selected-panel {
+  /* **2026-08-07 폭을 268px로 명시(`.editor-estimate-panel`과 동일, 2026-08-05
+     "제품 상세 선택 팝업과 같은 폭" 합의값)** — 이 전까지는 이 패널 자체엔 폭이 없고
+     안의 `.hud-selection`/`.hud-joints`가 고정 240px를 들고 있어서 그 값이 부모 폭을
+     간접적으로 정하는 구조였다. 그런데 그 자식들의 고정폭을 반응형으로 없애자
+     (아래 `.hud-selection` 항목 참고) 이 패널의 폭을 잡아 주던 유일한 값이 사라져
+     내용에 따라 제멋대로 줄어드는(실측 226px) 회귀가 났다 — 그래서 폭의 정본을 여기
+     (부모)로 옮겼다. 자식들은 이제 `width` 없이 `align-items:stretch`(기본값)로 이
+     268px(빼기 padding)을 그대로 채운다. */
+  width: 268px;
+  /* .hud 공용값(14px)보다 좁힘(2026-08-07, 사용자 요청 "해당 패널 안쪽 패딩을 줄여줘") —
+     `.editor-estimate-panel`이 한때 썼던 10px과 같은 값(위 항목 참고, 그쪽은 이후 다시
+     14px로 되돌아갔지만 이 패널은 그대로 유지). */
+  padding: 10px;
+  margin-top: auto;
+  max-height: min(70vh, 300px);
+  min-height: 0;
+  overflow-y: auto;
+  /* 2026-08-07 추가(사용자 요청 "모니터암 선택 팝업 크기랑 다른 것 선택 팝업 크기는
+     달라") — 위에서 폭을 268px로 고정하기 전엔, 관절 있는 아이템(모니터암 등)만 내용이
+     300px 상한을 넘겨 세로 스크롤이 실제로 생기고 스크롤바(width:12px)가 그만큼 박스를
+     넓혀(실측: 관절 아이템 274px vs 일반 아이템 262px) 우측 컬럼 안에서 폭이 들쭉날쭉해
+     보였다. 지금은 폭 자체가 268px로 고정이라 이 속성이 없어도 되지만, 스크롤바 유무로
+     안쪽 콘텐츠 가용폭이 흔들리는 것까지 막아주므로(스크롤바가 콘텐츠를 밀어내는 대신
+     항상 그 자리를 비워둠) 그대로 둔다. 높이는 여전히 내용에 따라 다르다(짧은 아이템이
+     300px까지 늘어나는 문제를 막으려 일부러 content-fit으로 되돌린 값, 위 항목 참고). */
+  scrollbar-gutter: stable;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+/* .hud-gallery·.editor-rail-flyout·.estimate-panel-body와 같은 커스텀 스크롤바(2026-08-06,
+   사용자 요청 "시뮬레이터 스크롤 바 모두 커스텀 스크롤 바로") — 이 패널만 빠져 있었다. 트랙
+   width:12px(히트 영역) + border:4px solid transparent·background-clip:content-box로 실제
+   보이는 폭은 4px, 값 자체는 `.hud-gallery`와 동일해 셋 다 같은 값 복제. Firefox 표준
+   속성(scrollbar-color)은 반드시 아래 `@supports not selector(::-webkit-scrollbar)` 블록에만
+   넣을 것 — 이 요소에 직접 선언하면 Chromium이 ::-webkit-scrollbar-* 규칙을 전부 버린다. */
+.editor-selected-panel::-webkit-scrollbar {
+  width: 12px;
+}
+/* 위아래 border를 16px로 키워 막대 세로 길이를 줄임(2026-08-07, 사용자 요청 "제품 선택
+   상세 스크롤 바 세로 길이 줄여줘") — `.hud-gallery`·`.estimate-panel-body`와 같은 값으로
+   맞춤(위 지속 이슈 참고, 이제 넷 중 `.editor-rail-flyout`만 4px 균일로 남는다). */
+.editor-selected-panel::-webkit-scrollbar-track {
+  background: color-mix(in srgb, var(--color-neutral-200) 60%, transparent);
+  background-clip: content-box;
+  border-width: 16px 4px;
+  border-style: solid;
+  border-color: transparent;
+  border-radius: 999px;
+}
+.editor-selected-panel::-webkit-scrollbar-thumb {
+  background: var(--color-primary-300);
+  background-clip: content-box;
+  border-width: 16px 4px;
+  border-style: solid;
+  border-color: transparent;
+  border-radius: 999px;
+}
+
+.hud-title {
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--gray-600);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 10px;
+}
+/* 제품 목록 — 폭 고정. 헤더 → 검색 → 카테고리 3x3 버튼 그리드 → 갤러리 순서로 세로로 쌓는다.
+   height:100%로 .editor-rail-flyout-product 전체 높이를 채워야 아래 .hud-gallery의 flex:1
+   스크롤이 생긴다(2026-07-28 무한 스크롤 도입 때 정한 규칙, 그리드 자체는 flex:none — 고정
+   9칸이라 늘어날 필요가 없다). */
+.hud-library {
+  display: flex;
+  flex-direction: column;
+  width: 300px;
+  height: 100%;
+  padding: 0;
+}
+/* `.library-header`/`.library-header-title`('제품' 제목 줄)는 2026-08-05 삭제 — 사용자 요청
+   "검색바 위의 text 제품 (title) 제거"로 제품 플라이아웃은 검색바가 맨 위다. '찜'
+   플라이아웃의 `.liked-header`는 그대로 남는다(그쪽 제목은 유지). */
+/* '찜' 플라이아웃(LikedProductsPanel.tsx) — 제목만 있고 검색·카테고리 그리드가 없다는
+   점만 빼면 .hud-library와 같은 계약(height:100%로 전체 높이를 채워야
+   .hud-gallery의 flex:1 스크롤이 생긴다)이라 값을 그대로 복제했다. */
+.hud-liked {
+  display: flex;
+  flex-direction: column;
+  width: 300px;
+  height: 100%;
+  padding: 0;
+}
+.liked-header {
+  padding: 12px 14px 0;
+  box-sizing: border-box;
+}
+.liked-header-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--gray-800);
+}
+/* 카테고리 선택 후 "카테고리 › {라벨}" 진입 화면 헤더(2026-08-04) — `lib-breadcrumb-back`이
+   그리드로 돌아가는 유일한 통로다(별도 `<` 버튼 없음, 이 플라이아웃의 기존 규칙과 동일). */
+.lib-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 14px 0;
+  box-sizing: border-box;
+  font-size: 13px;
+}
+.lib-breadcrumb-back {
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gray-600);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+.lib-breadcrumb-back:hover {
+  color: var(--primary);
+}
+.lib-breadcrumb-sep {
+  color: var(--gray-400);
+}
+.lib-breadcrumb-current {
+  font-weight: 700;
+  color: var(--gray-800);
+}
+/* .flyout-close-btn(플라이아웃 공용 빨간 닫기 버튼)·.wall-panel-header(그 버튼을 담던 벽
+   패널 헤더 줄)는 2026-08-05 제품/벽/시점 플라이아웃의 개별 '닫기' 버튼을 전부 없애며 함께
+   삭제됐다. **대체 접기 버튼은 이 왼쪽 레일 플라이아웃 쪽엔 없다** — 사용자 확인: "왼쪽
+   tool bar에는 < 버튼 없애줘. 오른쪽 컨테이너에만 넣어줘." 완전히 닫으려면 레일의 카테고리
+   아이콘(제품/벽/시점)을 다시 누른다(`flyout=null`, `EditorSidebar.tsx`의 기존 토글 그대로).
+   `<`/`>` 접기 버튼은 우측 `EstimatePanel`(`.editor-estimate-panel`) 하나에만 있다 — 아래
+   "우측 견적서 팝업" 섹션의 `.estimate-fold-btn` 참고. 새로 "닫기" 성격의 빨간 버튼이
+   필요해지면 이 이름·톤(판정 시맨틱 레드 §1.4가 아닌 옅은 레드, rgba(214,69,69,*))으로
+   다시 만들 것. */
+/* 2026-08-05 사용자 확인으로 세로 1열 목록 → 2열 타일 그리드로 재변경(아이콘 40px 위 +
+   라벨 아래 카드형 — 2026-08-04의 "목록 형태" 요청은 이번 확인으로 대체). 이력: 3열 타일
+   그리드 → 세로 1열 목록(2026-08-04) → 지금. `.category-grid` 클래스명·`category-{key}`
+   testid는 유지(스타일만 바뀜). 전체+9종 = 10칸이라 보통 5행 2열로 떨어지지만, real 모드는
+   백엔드에 없는 카테고리가 조용히 빠져 홀수가 될 수 있다 — 외톨이 마지막 타일은 1fr 셀을
+   그대로 채우며 왼쪽에 남는다(의도). 타일 배경은 backdrop-filter 없는 반투명 솔리드 —
+   글래스 위 글래스 금지(DESIGN-SYSTEM §2.3). */
+.category-grid {
+  flex: none;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  padding: 12px 14px;
+  box-sizing: border-box;
+}
+.category-grid-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 8px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  border: 1px solid var(--gray-200);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--gray-800);
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+.category-grid-btn:hover {
+  border-color: var(--primary);
+  background: rgba(232, 169, 58, 0.08);
+}
+.category-grid-btn.active {
+  border-color: var(--primary);
+  background: rgba(232, 169, 58, 0.14);
+}
+.category-grid-icon {
+  flex: none;
+  color: var(--gray-600);
+  object-fit: contain;
+}
+.category-grid-btn.active .category-grid-icon {
+  color: var(--gray-800);
+}
+.category-grid-label {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* 세부 카테고리 칩 행 — children이 있는 대분류를 고르면 브레드크럼 아래에 나온다
+   (2026-08-05 정적 카테고리 10종 개편으로 부활 — 정본은 constants/productCategoryGroup.ts).
+   자식이 많은 대분류는 줄이 여러 개로 늘어나므로 이 행 자체가 최대 높이 + 스크롤을 갖는다.
+   overflow-y 선택자라 아래 커스텀 스크롤바 규칙(webkit 3종 + @supports 목록)에도 같이 넣었다
+   (components/simulator/CLAUDE.md의 HUD 스크롤바 규약). */
+.subcategory-row {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-height: 96px;
+  overflow-y: auto;
+  /* 위 8px — 브레드크럼과 태그 행 사이 간격(2026-08-05 사용자 요청) */
+  padding: 8px 14px 10px;
+  box-sizing: border-box;
+}
+.subcategory-row::-webkit-scrollbar {
+  width: 12px;
+}
+.subcategory-row::-webkit-scrollbar-track {
+  background: color-mix(in srgb, var(--color-neutral-200) 60%, transparent);
+  background-clip: content-box;
+  border-width: 16px 4px;
+  border-style: solid;
+  border-color: transparent;
+  border-radius: 999px;
+}
+.subcategory-row::-webkit-scrollbar-thumb {
+  background: var(--color-primary-300);
+  background-clip: content-box;
+  border-width: 16px 4px;
+  border-style: solid;
+  border-color: transparent;
+  border-radius: 999px;
+}
+.subcategory-chip {
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 5px 10px;
+  /* pill(999px)에서 축소 — 2026-08-05 사용자 요청 */
+  border-radius: 8px;
+  border: 1px solid var(--gray-200);
+  background: rgba(255, 255, 255, 0.6);
+  color: var(--gray-600);
+  cursor: pointer;
+}
+.subcategory-chip:hover {
+  border-color: var(--primary);
+  color: var(--gray-800);
+}
+.subcategory-chip.active {
+  border-color: var(--primary);
+  background: rgba(232, 169, 58, 0.14);
+  color: var(--gray-800);
+  font-weight: 600;
+}
+.lib-search-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 14px 0;
+  padding: 8px 12px;
+  border: 1px solid var(--gray-200);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--gray-600);
+  transition: border-color 0.15s ease;
+}
+.lib-search-row:focus-within {
+  border-color: var(--primary);
+}
+.lib-search-input {
+  flex: 1;
+  min-width: 0;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--gray-800);
+  border: none;
+  outline: none;
+  background: transparent;
+}
+.lib-search-input::placeholder {
+  color: var(--gray-400);
+}
+/* 추천어 드롭다운(DERO-385) — 검색 행 바로 아래 겹쳐 뜬다. 갤러리를 밀어내면 목록이
+   타이핑마다 위아래로 튀므로 흐름에서 빼고(absolute) 그 위에 얹는다. 부모(.lib-search-wrap)가
+   기준이고, 플라이아웃이 overflow:hidden이라 패널 밖으로는 못 나간다 — 항목 수는 서버가 10개로
+   자르므로 그 안에서 스크롤한다. */
+.lib-search-wrap {
+  position: relative;
+  z-index: 2;
+}
+.lib-suggest-list {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  top: calc(100% + 4px);
+  max-height: 220px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  border: 1px solid var(--gray-200);
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+}
+.lib-suggest-item {
+  display: block;
+  width: 100%;
+  padding: 7px 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  font-family: inherit;
+  font-size: 13px;
+  text-align: left;
+  color: var(--gray-800);
+  cursor: pointer;
+}
+.lib-suggest-item.on {
+  background: rgba(232, 169, 58, 0.16);
+}
+/* 갤러리 — 검색 결과와 카테고리 그리드 선택 결과가 공유하는 유일한 스크롤 컨테이너
+   (2026-08-04부터 — 카테고리 그리드는 flex:none 고정 9칸이라 스크롤이 없다. 예전 아코디언
+   시절엔 인라인으로 펼쳐지는 별도 `.hud-gallery-inline` 변형이 있었지만, 지금은 그리드 선택과
+   무관하게 이 하나의 갤러리 내용만 바뀐다). 패널 바닥을 flex:1로 채우고 자기가 스크롤
+   컨테이너다(GallerySection이 sentinel로 IntersectionObserver를 이 요소에 root로 건다). */
+.hud-gallery {
+  border-top: 1px solid var(--glass-border);
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+.hud-gallery::-webkit-scrollbar {
+  width: 12px;
+}
+/* 위아래 border를 키워 막대 세로 길이를 줄임 — 2026-08-07 처음엔 8px(사용자 요청 "제품
+   선택 창 스크롤바 길이 위아래 간격 조금 더 추가"), 같은 날 다시 16px로(사용자 요청
+   "제품 선택 패널 스크롤바도 세로 길이 줄여줘" — `.estimate-panel-body`와 같은 값으로
+   맞춤). 좌우 border는 4px 그대로 둬서 보이는 폭(=ScrollProgress의 w-1, 위 지속 이슈
+   참고)은 안 바뀐다. border는 실제 트랙 길이를 줄이지 않고 background-clip:content-box가
+   가리는 투명 여백만 늘린다. */
+.hud-gallery::-webkit-scrollbar-track {
+  background: color-mix(in srgb, var(--color-neutral-200) 60%, transparent);
+  background-clip: content-box;
+  border-width: 16px 4px;
+  border-style: solid;
+  border-color: transparent;
+  border-radius: 999px;
+}
+.hud-gallery::-webkit-scrollbar-thumb {
+  background: var(--color-primary-300);
+  background-clip: content-box;
+  border-width: 16px 4px;
+  border-style: solid;
+  border-color: transparent;
+  border-radius: 999px;
+}
+.hud-gallery-inner {
+  padding: 14px;
+  box-sizing: border-box;
+}
+.hud-gallery-sentinel {
+  height: 1px;
+}
+/* 갤러리 로딩 스피너 행 — "불러오는 중…" 텍스트 대신 가운데 회전 원(2026-08-05 사용자 요청).
+   .spinner(LoadingScreen과 공유)를 24px로 줄여 쓴다. */
+.lib-loading {
+  display: flex;
+  justify-content: center;
+  padding: 24px 0;
+}
+.lib-loading .spinner {
+  width: 24px;
+  height: 24px;
+  margin: 0;
+}
+/* 빈 상태 — 텅 빈 상자 아이콘 + 문구를 가운데 배치(2026-08-05 사용자 요청). 갤러리는
+   내용 높이 스크롤 컨테이너라 세로 중앙은 넉넉한 상하 패딩으로 잡는다. */
+.lib-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 48px 0;
+  color: var(--gray-400);
+}
+.lib-empty {
+  font-size: 13px;
+  color: var(--gray-600);
+  margin: 0;
+  text-align: center;
+}
+/* `.lib-search-note`(검색 범위 안내 문구)는 2026-08-05 사용자 요청으로 삭제 — 백엔드
+   GET /products에 검색 파라미터가 없어 검색이 이미 받은 페이지 안에서만 도는 사실은
+   그대로다(LibraryPanel.tsx 주석 참고). */
+/* grid(`repeat(2, 1fr)`)는 마지막 줄 정렬을 아예 바꿀 수 없어(1fr 트랙이 항상 컨테이너를
+   꽉 채워 justify-content가 분배할 여유 공간이 없다) 2026-08-06 flex-wrap으로 바꿨다 —
+   그때 요청("hud-gallery 가운데 정렬")은 `center`였지만 지금은 **`flex-start`(왼쪽)**다
+   (사용자 요청 "1개면 왼쪽 정렬로"). 카드 폭이 2열 고정이라 이 값이 실제로 바꾸는 건
+   **마지막 줄에 1개만 남는 경우뿐**이다 — 꽉 찬 줄은 어느 값이든 같은 그림이다.
+   `.category-grid`가 같은 이유로 `flex-start`인 것과 같은 결론. .lib-card의 flex-basis는
+   퍼센트 계산이라 폭이 300px가 아니게 바뀌어도(다른 플라이아웃이 재사용해도) 깨지지
+   않는다. */
+.lib-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 8px;
+}
+.lib-card {
+  position: relative;
+  flex: 0 0 calc(50% - 4px);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: inherit;
+  font-size: 12px;
+  text-align: left;
+  padding: 8px;
+  border-radius: 10px;
+  /* 제품 카드 경계선 — 예전엔 transparent라 카드가 어디서 끊기는지 안 보였다. 평소엔 옅은
+     노랑으로 항상 그어두고, 커서를 올리면 같은 노랑의 진한 값으로 올린다(2026-07-31 사용자
+     요청). hover에서 border-color만 바꾸므로 두께가 변하지 않아 레이아웃이 흔들리지 않는다. */
+  border: 1px solid rgba(232, 169, 58, 0.3);
+  background: rgba(255, 255, 255, 0.55);
+  cursor: grab;
+  touch-action: none;
+  transition:
+    border 0.15s ease,
+    background 0.15s ease;
+}
+.lib-card:hover {
+  border-color: var(--primary);
+  background: rgba(255, 255, 255, 0.85);
+}
+.lib-card:active {
+  cursor: grabbing;
+}
+/* 결과가 정확히 1개일 땐 부모(`.lib-grid`)의 justify-content:center가 그 한 장을 가운데로
+   띄워 양옆에 큰 빈 공간만 남았다. **2026-08-06엔 :only-child로 폭만 70%로 넓혀 절충했지만
+   (2열 폭 calc(50% - 4px) 대신), 2026-08-07 사용자 피드백 "요소 컴포넌트 하나면 왼쪽
+   상단에 하나가 떠야 하는 거 아니냐"로 위치 자체를 되돌린다** — 폭은 다른 카드와 같은 2열
+   폭 그대로 두고(특별히 안 넓힌다), `margin-right:auto`로 오른쪽에 남는 여유 공간을 이
+   카드 하나가 전부 떠안게 한다. flexbox는 auto margin이 있으면 그 여유 공간을
+   justify-content보다 먼저 소진하므로(스펙 규정) 부모의 center가 무력화되고 카드가 왼쪽
+   (그리드 첫 칸 자리)에 고정된다. */
+.lib-card:only-child {
+  margin-right: auto;
+}
+.lib-thumb {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+  border-radius: 6px;
+  background: var(--gray-50);
+  pointer-events: none;
+}
+.lib-name {
+  line-height: 1.3;
+  min-height: 2.6em;
+}
+/* 카메라 시점 = '시점' 팝업 전용, 1열×6행 세로 나열. 탭마다 개별 보더/배경(글래스 위
+   글래스)을 주지 않고 팝업 자체(부모 .glass)만 표면으로 삼는다 — 활성 탭만 웜옐로우
+   솔리드로 도드라진다. */
+.hud-camera {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+.cam-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 8px 6px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--gray-700);
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+.cam-tab svg {
+  flex: 0 0 auto;
+  color: var(--gray-600);
+}
+.cam-tab:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+.cam-tab.active {
+  background: var(--select-accent);
+  color: var(--gray-800);
+}
+.cam-tab.active svg {
+  color: var(--gray-800);
+}
+/* 벽 좌/전면/우 스위치 목록 — 방 조명이 상단 네비바로 옮겨가며(2026-07-27) 이 플라이
+   아웃엔 벽 스위치만 남았다. 예전엔 조명·벽 두 서브그룹 + 구분선이 있었으나 지금은
+   `.light-list` 하나면 된다(래퍼·구분선 클래스는 삭제 — 쓰는 곳 없음). */
+.light-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.light-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.light-item-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gray-800);
+}
+.wall-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+/* 벽 스위치 아래 거리 입력(mm) — 좌/우는 책상 중심 기준 거리, 전면은 책상 뒷변 간격. */
+.wall-distance-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-left: 4px;
+}
+.wall-distance-label {
+  font-size: 12px;
+  color: var(--gray-600);
+  flex: 1 1 auto;
+}
+.wall-distance-input {
+  width: 64px;
+  font-size: 12px;
+  padding: 4px 6px;
+  border: 1px solid var(--gray-200);
+  border-radius: 6px;
+  background: var(--gray-50);
+  color: var(--gray-800);
+  text-align: right;
+}
+.wall-distance-unit {
+  font-size: 12px;
+  color: var(--gray-600);
+}
+.wall-distance-btn {
+  flex: 0 0 auto;
+  font-size: 11px;
+  padding: 4px 8px;
+  border: 1px solid var(--gray-200);
+  border-radius: 6px;
+  background: var(--gray-50);
+  color: var(--gray-600);
+  cursor: pointer;
+}
+.wall-distance-btn:hover {
+  background: var(--gray-200);
+}
+/* 방 테마 선택 (ADR-0021) — 벽지 색·바닥 색 피커를 대체한다. 썸네일 이미지 파일을
+   만들지 않으므로 칩은 CSS 2색 그라디언트(벽/바닥) + 라벨이다. 라벨이 붙어 한 줄에
+   다 못 들어가므로 .emit-row(가로 한 줄)가 아니라 세로 라벨 + 줄바꿈 그리드다. */
+.theme-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.theme-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.theme-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  padding: 4px 8px 4px 4px;
+  border: 1px solid var(--gray-200);
+  border-radius: 999px;
+  background: var(--gray-50);
+  color: var(--gray-800);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.theme-chip:hover {
+  background: var(--gray-200);
+}
+/* 선택 상태는 라벤더 링 — 액센트 전용색이라 칩의 테마 색과 헷갈리지 않는다(§1.2, .emit-swatch와 동일 규약). */
+.theme-chip.active {
+  border-color: var(--lavender);
+  box-shadow: 0 0 0 2px rgba(139, 124, 246, 0.35);
+}
+.theme-chip-swatch {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  border-radius: 999px;
+  border: 1px solid var(--gray-200);
+}
+/* 벽면 마감 (ADR-0030) — 면 선택 → 계열 → 변형 3단. 프리셋 칩과 같은 이유로 썸네일 이미지
+   파일을 만들지 않고 변형 스와치도 CSS 단색이다. 계열·변형 목록 길이는 레지스트리가
+   정하므로 둘 다 줄바꿈한다. */
+.finish-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.finish-surface-row,
+.finish-family-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.finish-tab {
+  flex: 1 1 auto;
+  font-size: 12px;
+  padding: 4px 8px;
+  border: 1px solid var(--gray-200);
+  border-radius: 6px;
+  background: var(--gray-50);
+  color: var(--gray-800);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.finish-tab:hover:not(:disabled) {
+  background: var(--gray-200);
+}
+.finish-tab.active {
+  border-color: var(--lavender);
+  box-shadow: 0 0 0 2px rgba(139, 124, 246, 0.35);
+}
+.finish-tab:disabled,
+.finish-variant:disabled,
+.theme-chip:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.finish-variant-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.finish-variant {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  padding: 4px 8px 4px 4px;
+  border: 1px solid var(--gray-200);
+  border-radius: 999px;
+  background: var(--gray-50);
+  color: var(--gray-800);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.finish-variant:hover:not(:disabled) {
+  background: var(--gray-200);
+}
+.finish-variant.active {
+  border-color: var(--lavender);
+  box-shadow: 0 0 0 2px rgba(139, 124, 246, 0.35);
+}
+.finish-variant-swatch {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  border-radius: 999px;
+  border: 1px solid var(--gray-200);
+}
+/* 벽 플라이아웃 — 디귿(ㄷ)자 평면도(WallDiagram.tsx) + 스위치 목록을 세로로 쌓는다
+   (2026-07-27, 스위치만 있던 목록에 시각 다이어그램 추가). */
+.hud-wall-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.wall-diagram {
+  width: 100%;
+  max-width: 220px;
+  height: auto;
+  align-self: center;
+}
+.wall-diagram-desk {
+  fill: var(--gray-50);
+  stroke: var(--gray-200);
+  stroke-width: 1;
+}
+/* 벽 세그먼트 — 점선 시도(2026-07-27)는 짧은 대시 + round cap이 뭉친 원으로 찍혀
+   울퉁불퉁해 보인다는 피드백으로 되돌리고, 지금은 on/off 둘 다 실선에 색만 다르다
+   (꺼짐 = 옅은 회색, 켜짐 = 진한 회색). 토글과 같은 상태를 그대로 그려 REQ-ENV-04
+   on/off를 그림으로 즉시 이해시킨다. */
+.wall-diagram-seg {
+  fill: none;
+  stroke: var(--gray-200);
+  stroke-width: 8;
+  stroke-linecap: round;
+  cursor: pointer;
+  transition: stroke 0.15s ease;
+}
+.wall-diagram-seg:hover {
+  stroke: var(--gray-400);
+}
+.wall-diagram-seg.on {
+  stroke: var(--gray-800);
+}
+.wall-diagram-seg.on:hover {
+  stroke: var(--gray-600);
+}
+
+.switch {
+  position: relative;
+  flex: 0 0 auto;
+  width: 40px;
+  height: 22px;
+  padding: 2px;
+  border: none;
+  border-radius: 999px;
+  background: var(--gray-200);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.switch:hover {
+  background: var(--gray-400);
+}
+.switch.active {
+  background: var(--primary);
+}
+.switch.active:hover {
+  background: var(--primary-600);
+}
+.switch-thumb {
+  display: block;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  transition: transform 0.15s ease;
+}
+.switch.active .switch-thumb {
+  transform: translateX(18px);
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--gray-200);
+  background: rgba(255, 255, 255, 0.6);
+  color: var(--gray-800);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+/* 알약형(999px) 대신 각진 작은 라운드 — 복제/삭제/선택 해제처럼 한 줄에 나란히
+   붙는 액션 버튼용(2026-07-27). */
+.chip-sq {
+  border-radius: 6px;
+  white-space: nowrap;
+}
+.chip:hover {
+  border-color: var(--primary);
+}
+.chip.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--gray-800);
+}
+.chip:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.chip:disabled:hover {
+  border-color: var(--gray-200);
+}
+/* selection panel: 선택 아이템 회전·복제·삭제. '조작' 팝업 flex 행 — 관절 패널과 나란히.
+   패딩은 .hud 공용값(14px)보다 좁힘(2026-08-07, 사용자 요청 "hud hud-selection 해당
+   패널의 바깥 패딩 줄여줘") — 부모 `.editor-selected-panel`도 같은 이유로 10px로
+   좁혀서(위 항목), 이 안쪽 래퍼까지 14px를 그대로 두면 둘이 겹쳐 체감 여백이 과했다.
+   **폭은 2026-08-07 고정 240px에서 제거(반응형)** — 사용자 요청 "가로 너비 맞춰서
+   커지게. 반응형으로. 지금은 애매하게 오른쪽 여백이 남아": `.editor-selected-panel`
+   패딩을 14→10px로 줄일 때(위 항목) 240px라는 숫자를 다시 맞추지 않아서, 부모가 내주는
+   실제 콘텐츠 폭(268 - 10×2 = 248px)보다 8px 좁아 오른쪽에 빈 여백이 남았다.
+   `width` 자체를 없애면 부모(`.editor-selected-panel`, `display:flex;
+   flex-direction:column`)의 기본 `align-items:stretch`가 이 값을 항상 부모의 남는
+   폭에 맞춰준다 — 앞으로 부모 패딩이 다시 바뀌어도 이 숫자를 손으로 재계산할 필요가
+   없다. */
+.hud-selection {
+  padding: 10px;
+}
+.hud-selection.hidden {
+  display: none;
+}
+/* 선택 패널 헤더 — 썸네일 왼쪽 고정, 이름·브랜드·가격·크기는 오른쪽 세로 나열
+   (2026-07-27 재배치, 이전엔 썸네일이 제목 아래 전체 폭). 선택 해제는 복제/삭제
+   아래 별도 버튼(재배치 당시 그대로). */
+.sel-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.sel-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+/* `.hud-title`(다른 패널의 옅은 라벨 톤)과 분리 — 여긴 실제 제목이라 크고 진하게. */
+/* 2026-08-07 사용자 요청으로 축소 — 원래 16px/700(의도적으로 큰 글자, CLAUDE.md
+   ".sel-header" 항목 참고, 갱신함). */
+.sel-product-name {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--gray-800);
+}
+.sel-brand {
+  font-size: 12px;
+  color: var(--gray-600);
+}
+.sel-price {
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--gray-800);
+  margin-top: 2px;
+}
+/* 2026-08-07 "100×385×400mm" 한 줄에서 너비/깊이/높이 각 행으로 재개정(사용자 요청
+   "사용자가 더 쉽게 볼 수 있게" → "너비 깊이 높이 각각 row로 제공") — 숫자 세 개만
+   ×로 이어붙이면 어느 값이 어느 축인지 라벨 없이는 알 수 없었다. */
+.sel-dims {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 2px;
+}
+.sel-dim-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+}
+.sel-dim-label {
+  color: var(--gray-600);
+}
+.sel-dim-value {
+  color: var(--gray-800);
+  font-weight: 600;
+}
+/* 구매 버튼 — 2026-08-05부터 패널 하단에 flush로 붙는 바가 아니라 보통 버튼처럼 패널
+   패딩(.hud 14px) 안에 들어앉는다(사용자 요청: "밑에 붙이는 형태 말고 padding 넣어서
+   버튼으로"). `.btn`의 `border-radius:12px`를 그대로 쓴다(바닥 모서리만 깎던 오버라이드
+   제거). **`margin-top:auto`는 2026-08-07부터 이 버튼이 아니라 부모 `.sel-actions`에
+   있다** — 좋아요 버튼을 옆에 나란히 추가하면서(사용자 요청 "구매하기 버튼 옆에 좋아요
+   버튼도 추가해줘") 이 버튼 하나만 감싸던 여백 로직을 좋아요 버튼까지 포함한 행 전체로
+   옮겼다. 애초에 이 마진이 필요했던 이유(2026-08-06, 사용자 요청 "구매하기 버튼은 늘
+   밑에 정렬")는 그대로다 — 내용(SelectionPanel+JointPanel)이 짧으면 액션 행이 패널
+   바닥이 아니라 내용 바로 아래에 뜨는 문제. */
+.sel-actions {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sel-purchase {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+  text-align: center;
+  color: #fff;
+}
+.sel-thumb {
+  display: block;
+  flex: 0 0 auto;
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  border-radius: 10px;
+  background: var(--gray-50);
+}
+/* 선택된 3D 아이템 바로 위에 뜨는 부동 툴바(수동 3축 + 복제·삭제·해제) —
+   RenderLoop(SimulatorCanvas.tsx)가 매 프레임 계산한 화면 좌표를 transform으로
+   받는다(SelectionToolbar.tsx). 2026-08-03 폐기됐다가 2026-08-04 복구(ADR-0023 결정 6).
+   position:fixed 기준은 뷰포트 — 캔버스가 #app/#scene과 함께 뷰포트 전체를 덮는
+   구조라(frontend/CLAUDE.md) 캔버스 픽셀 좌표가 곧 뷰포트 좌표다. left/top은 0으로
+   고정하고 transform 하나로만 이동시켜야 매 프레임 갱신이 리플로우 없이(합성 레이어)
+   끝난다. padding은 .hud의 기본 14px보다 작게, border-radius는 .glass의 기본
+   --radius(16px)보다 작게 재정의 — 둘 다 소스 순서상 .hud·.glass보다 뒤라 이긴다. */
+.selection-toolbar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px;
+  border-radius: 10px;
+  visibility: hidden;
+}
+/* 아이콘만(텍스트 라벨 없음) — .chip 기본 padding(8px 12px)은 텍스트 기준 좌우
+   여백이라 아이콘 단독이면 옆으로 퍼져 보인다. 이 툴바 안에서만 정사각으로 좁힌다. */
+.selection-toolbar .chip {
+  padding: 8px;
+}
+/* 축 구분선 — 회전 · 기울기 · 높이 · 액션 네 묶음을 눈으로 갈라 준다. */
+.selection-toolbar-divider {
+  width: 1px;
+  align-self: stretch;
+  margin: 4px 2px;
+  background: var(--gray-200);
+}
+/* 회전 각도·기울기 각도·높이(mm) 숫자 입력(2026-07-28 — 슬라이더 제거, 정확한 값을
+   바로 타이핑하고 싶다는 피드백으로 교체). .wall-distance-input과 같은 컴팩트
+   숫자 입력 톤. */
+.sel-angle-input {
+  width: 46px;
+  font-size: 12px;
+  padding: 4px 2px;
+  border: 1px solid var(--gray-200);
+  border-radius: 6px;
+  background: var(--gray-50);
+  color: var(--gray-800);
+  text-align: center;
+}
+/* 편집 잠금(REQ-SIM-26) 중엔 눌러도 스토어 게이트에 걸려 아무 일도 안 난다 —
+   .chip:disabled와 같은 톤으로 "지금은 못 만진다"를 보여준다(2026-08-03). */
+.sel-angle-input:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.chip-danger {
+  color: var(--danger, #b3261e);
+  border-color: var(--danger, #b3261e);
+}
+/* 발광 색 행 — 프리셋 스와치 + 네이티브 컬러 피커. 한 줄로 묶어 좌하단 칸이
+   관절 패널 쪽으로 자라지 않게 한다(그리드 칸은 이웃을 밀지 않는다).
+   가변 발광이 없으면 아예 렌더되지 않으므로 .hidden 규칙이 필요 없다. */
+.emit-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.screen-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+/* 파일 input은 라벨 칩 안에 숨긴다 — 브라우저 기본 버튼은 패널 톤과 안 맞는다. */
+.screen-pick {
+  cursor: pointer;
+}
+.screen-pick input[type='file'] {
+  display: none;
+}
+.emit-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gray-600);
+  margin-right: 2px;
+}
+.emit-swatch {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  padding: 0;
+  border-radius: 999px;
+  border: 1px solid var(--gray-200);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.emit-swatch:hover {
+  transform: scale(1.12);
+}
+/* 선택 상태는 라벤더 링 — 액센트 전용색이라 스와치 자체 색과 헷갈리지 않는다(§1.2). */
+.emit-swatch.active {
+  border-color: var(--lavender);
+  box-shadow: 0 0 0 2px rgba(139, 124, 246, 0.35);
+}
+.emit-picker {
+  width: 26px;
+  height: 22px;
+  flex: none;
+  padding: 0;
+  border: 1px solid var(--gray-200);
+  border-radius: 6px;
+  background: none;
+  cursor: pointer;
+}
+.emit-picker::-webkit-color-swatch-wrapper {
+  padding: 2px;
+}
+.emit-picker::-webkit-color-swatch {
+  border: none;
+  border-radius: 4px;
+}
+
+/* 램프 밝기·색온도 조절 행 (REQ-SIM-08, DERO-287) — 램프를 선택했을 때만
+   렌더되므로 .hidden 규칙이 필요 없다(.emit-row와 같은 규약). 슬라이더 자체는
+   기존 .joint-slider를 그대로 재사용한다 — 여기선 감싸는 자리와 마커만 정의한다.
+   부모(.hud-selection)가 이미 글래스라 여기서 표면을 또 깔지 않는다(§2.3 중첩 금지). */
+.lamp-row {
+  margin-bottom: 10px;
+  font-size: 12px;
+}
+.lamp-row-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+.lamp-label {
+  font-weight: 600;
+  color: var(--gray-600);
+}
+.lamp-val {
+  color: var(--gray-600);
+}
+/* 사양 캡션 — **현재값이 아니라 제품 사양 표기다.** 더 작고 옅게 해서 같은 행의
+   현재값(.lamp-val, 12px/--gray-600)과 시각적으로 갈린다. */
+.lamp-spec {
+  margin-bottom: 3px;
+  font-size: 11px;
+  color: var(--gray-400);
+}
+/* 마커 띠는 슬라이더 **위쪽** 여백에 얹는다 — 트랙 안에 넣으면 --fill 그라디언트에
+   덮여 안 보인다. 사양이 미제공인 제품은 이 요소가 아예 렌더되지 않는다. */
+.lamp-slider-wrap {
+  position: relative;
+  padding-top: 7px;
+}
+.lamp-marker {
+  position: absolute;
+  top: 0;
+  left: var(--marker-left, 0%);
+  width: var(--marker-width, 0%);
+  /* 범위형이라도 조절 범위 밖으로 크게 벗어나면 클램프 후 폭이 0에 수렴한다 —
+     그때도 최소 굵기는 남아야 한다(폭 0 띠 = 화면에 아무것도 없음 = 287 1차 부결 증상).
+     고정형은 여기가 아니라 .lamp-marker-point가 맡는다. */
+  min-width: 3px;
+  height: 3px;
+  border-radius: 999px;
+  /* 중립 그레이 — 채움(--primary)과 색이 갈려야 "내가 고른 값"과 "제품 사양 범위"가
+     한눈에 구분된다. 액센트를 또 쓰면 두 의미가 같은 색으로 읽힌다. */
+  background: var(--gray-400);
+  pointer-events: none;
+}
+/* 고정형(사양 min == max) 마커 — **폭 0짜리 띠는 화면에 아무것도 안 그린다**(287 1차
+   판정의 증상)이라 점 하나로 그린다. 색은 띠와 같은 계열이라 "제품 사양"이라는 의미가
+   슬라이더 채움(--primary 액센트, "내가 고른 값")과 계속 갈린다.
+   --marker-left는 값의 자리이고 점은 그 자리를 **중심**으로 잡아야 하므로 반폭만큼 당긴다. */
+.lamp-marker-point {
+  position: absolute;
+  top: -1px;
+  left: var(--marker-left, 0%);
+  width: 5px;
+  height: 5px;
+  margin-left: -2.5px;
+  border-radius: 999px;
+  background: var(--gray-400);
+  pointer-events: none;
+}
+
+/* 결합 상태 블록 — 결합된 모니터를 선택했을 때만 렌더된다(미결합 아이템엔 아예 없다). */
+.sel-mount {
+  margin-bottom: 10px;
+  padding: 10px;
+  border: 1px solid var(--gray-200);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.6);
+  font-size: 12px;
+  color: var(--gray-800);
+}
+/* 2026-08-07 반응형으로 변경(사용자 요청) — flex 아이템은 기본 min-width:auto라 텍스트
+   (`.sel-mount-name`)가 자기 콘텐츠 폭보다 못 줄어들어, 결합된 모니터암 이름이 길면
+   고정 240px 패널(`.hud-selection`) 폭을 넘겨도 줄바꿈되지 않고 넘쳤다. flex-wrap:wrap +
+   텍스트 쪽 min-width:0으로 이름이 길 때 배지(`.badge-warn`) 줄로 자연스럽게 내려가거나
+   텍스트 자체가 줄바꿈되게 한다. */
+.sel-mount-arm {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+.sel-mount-name {
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+.badge-warn {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--warn);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+.sel-mount-reasons {
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+  color: var(--gray-600);
+  line-height: 1.5;
+}
+.sel-mount .chip {
+  width: 100%;
+}
+/* joint panel — '조작' 팝업 안에서 선택 패널과 나란히. 팝업 자체가 유리 표면 하나뿐이라
+   (동시 backdrop-filter는 팝업+독 바 2개, §2.3 예산 3개 이내) 개별 배경이 필요 없다.
+   폭은 2026-08-07 `.hud-selection`과 같은 이유로 고정 240px 제거(반응형, 별도 규칙
+   자체가 불필요해짐) — 형제인 `.hud-selection`과 항상 같은 폭이어야 하는데 숫자를
+   따로 들고 있으면 한쪽만 바뀌는 사고가 재발한다(위 항목 참고). */
+.hud-joints.hidden {
+  display: none;
+}
+.joint-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 8px;
+  align-items: center;
+  margin-bottom: 10px;
+  font-size: 12px;
+}
+.joint-name {
+  font-weight: 600;
+  color: var(--gray-800);
+}
+.joint-val {
+  color: var(--gray-600);
+}
+/* 트랙 배경 흰색(요청) — `accent-color`만으로는 트랙 paint(배경·테두리)를 못 바꾼다.
+   `-webkit-appearance:none` 없이 runnable-track에 background/border를 줘도 height 같은
+   레이아웃 속성만 먹고 배경·테두리는 조용히 무시된다(네이티브 트랙 크롬이 여전히 그
+   부분을 그린다) — 처음 시도에서 겪은 실사고. appearance:none으로 네이티브 렌더링을
+   완전히 끄면 accent-color도 같이 죽으므로, 손잡이(thumb)도 직접 그린다. */
+/* 값을 당길수록 채워진 구간이 primary 색으로 자라는 슬라이더 — --fill(0~100%)은
+   JSX에서 (value-min)/(max-min)로 계산해 인라인 style로 넣는다(2026-07-27,
+   "당기면 색이 바뀌어야" 피드백. 이전엔 트랙이 항상 흰색 고정이라 값이 안 보였다).
+   WebKit은 appearance:none 뒤 input 자체 background가 트랙 아래로 비쳐서 이
+   그라디언트로 채우고, Firefox는 네이티브 ::-moz-range-progress로 채운다. */
+.joint-slider {
+  grid-column: 1 / -1;
+  width: 100%;
+  margin: 0;
+  -webkit-appearance: none;
+  appearance: none;
+  background: linear-gradient(
+    to right,
+    var(--primary) var(--fill, 0%),
+    var(--gray-200) var(--fill, 0%)
+  );
+  border-radius: 999px;
+  cursor: pointer;
+}
+.joint-slider::-webkit-slider-runnable-track {
+  background: transparent;
+  border: 1px solid var(--gray-200);
+  border-radius: 999px;
+  height: 4px;
+}
+.joint-slider::-moz-range-track {
+  background: var(--gray-200);
+  border: 1px solid var(--gray-200);
+  border-radius: 999px;
+  height: 4px;
+}
+.joint-slider::-moz-range-progress {
+  background: var(--primary);
+  border-radius: 999px;
+  height: 4px;
+}
+.joint-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  margin-top: -5px;
+  border-radius: 50%;
+  background: var(--primary);
+  cursor: pointer;
+}
+.joint-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: none;
+  border-radius: 50%;
+  background: var(--primary);
+  cursor: pointer;
+}
+
+/* 경고 배너 — 좌/우 그리드 칼럼 폭에 따라 흔들리면 안 되므로 그리드 트랙에 태우지
+   않고 화면 상단 가운데에 절대좌표로 고정한다(그리드 부모가 이미 position:absolute라
+   여기서도 뷰포트 기준 고정이 된다, .screen 규칙 참조). */
+.warn-banner {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: auto;
+  background: rgba(229, 72, 77, 0.92);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 18px;
+  border-radius: 999px;
+  box-shadow: 0 6px 20px rgba(229, 72, 77, 0.3);
+}
+.warn-banner.hidden {
+  display: none;
+}
+
+/* 결합 판정 배너 — 충돌 경고 배너와 같은 이유로 그리드 밖에 고정하되, 둘이 동시에
+   뜰 수 있으므로 한 칸 아래에 쌓는다. 시맨틱 색은 불가=레드 / 조건부=앰버 (§1.4 D8). */
+.mount-banner {
+  position: absolute;
+  top: 68px;
+  left: 50%;
+  transform: translateX(-50%);
+  /* 읽기 전용 배너다 — auto면 5초 동안 캔버스 클릭·드래그를 가로챈다. */
+  pointer-events: none;
+  max-width: min(520px, 70vw);
+  padding: 10px 18px;
+  border-radius: 14px;
+  color: #fff;
+  text-align: center;
+}
+.mount-banner--reject {
+  background: rgba(229, 72, 77, 0.92);
+  box-shadow: 0 6px 20px rgba(229, 72, 77, 0.3);
+}
+.mount-banner--warn {
+  background: rgba(199, 119, 0, 0.94);
+  box-shadow: 0 6px 20px rgba(199, 119, 0, 0.28);
+}
+.mount-banner-title {
+  font-size: 14px;
+  font-weight: 700;
+}
+.mount-banner-reasons {
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* 저장 응답의 규격 위반 배너 — 충돌 경고·결합 배너와 같은 이유로 그리드 밖에 고정하되 셋이 동시에
+   뜰 수 있으므로 한 칸 더 아래에 쌓는다. 저장은 성공했고 업로드만 막히는 상태라 색은 앰버다
+   (시맨틱 색 §1.4 D8 — 불가=레드는 충돌 경고가 이미 쓴다). 읽기 전용이라 pointer-events는 none. */
+.violation-banner {
+  position: absolute;
+  top: 116px;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  max-width: min(520px, 70vw);
+  padding: 10px 18px;
+  border-radius: 14px;
+  color: #fff;
+  text-align: center;
+  background: rgba(199, 119, 0, 0.94);
+  box-shadow: 0 6px 20px rgba(199, 119, 0, 0.28);
+}
+.violation-banner-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+}
+.violation-banner-reasons {
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* 나가기 확인 모달 — screen-sim이 pointer-events:none이라 오버레이도 명시적으로 auto를 준다. */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(20, 18, 26, 0.32);
+  pointer-events: auto;
+}
+.modal-card {
+  width: 360px;
+  padding: 10px;
+  padding-top: 20px;
+  text-align: center;
+}
+.modal-card.exit-confirm-card {
+  background: #fff;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.modal-card .h2 {
+  margin-bottom: 10px;
+}
+.modal-card .muted {
+  margin: 0 0 22px;
+  font-size: 14px;
+}
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+.modal-actions .btn {
+  flex: 1;
+}
+
+/* 하드웨어 가속 안내 모달 — exit-confirm처럼 불투명 흰 배경(WebGL 위 glass 패널 예산 절약).
+   동일 특이성 덮어쓰기라 .modal-card 뒤에 와야 한다(이 파일의 소스 순서 규칙). */
+.modal-card.hwaccel-modal {
+  width: 420px;
+  background: #fff;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  text-align: left;
+  padding: 20px 18px 12px;
+}
+.hwaccel-modal .h2 {
+  text-align: center;
+}
+.hwaccel-status {
+  margin: 0 0 2px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--gray-600, #6c6a66);
+}
+.hwaccel-status.on {
+  color: var(--primary, #f0bb4c);
+}
+.hwaccel-recommend {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--danger, #e5484d);
+  line-height: 1.5;
+}
+.hwaccel-modal .muted {
+  margin-bottom: 12px;
+  text-align: left;
+}
+.hwaccel-browser-list {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.hwaccel-browser-row {
+  border: 1px solid rgba(20, 18, 26, 0.1);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+.hwaccel-browser-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.hwaccel-browser-name {
+  font-size: 14px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.hwaccel-current-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--primary, #f0bb4c);
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+.hwaccel-copy-btn {
+  flex: none;
+  font-size: 12px;
+  padding: 4px 10px;
+}
+.hwaccel-addr {
+  display: block;
+  margin: 6px 0 4px;
+  font-size: 12px;
+  background: rgba(20, 18, 26, 0.06);
+  border-radius: 6px;
+  padding: 3px 8px;
+  user-select: all; /* 클릭 한 번에 전체 선택 — 복사 버튼 없이도 집어갈 수 있게 */
+}
+.hwaccel-steps {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--gray-600, #6c6a66);
+}
+
+/* --- 우측 견적서 팝업 --- */
+/* 2026-08-06부터 `.editor-right-column`(위 "우측 컬럼" 항목)의 flex 자식 — 더 이상
+   자기 자신을 position:absolute로 두지 않는다(선택 상세 패널과 겹칠 수 있었던 문제
+   해결). 폭은 여전히 268px — 제품 상세 선택 팝업(`.editor-selected-panel`)과 같은
+   폭이다(2026-08-05 사용자 요청). **2026-08-07 이전엔** 그 패널이 자기 자신에 폭을 안
+   주고 안의 `.hud-selection`/`.hud-joints`가 고정 240px를 정하는 식이었고, 여기서도
+   같은 셈(240 + `.hud` 좌우 패딩 14px×2)으로 268px을 직접 지정했었다 — 그런데 이후
+   `.editor-selected-panel`의 패딩이 14→10px로 줄면서 240이라는 숫자를 안 맞춰 오른쪽에
+   빈 여백이 남는 사고가 났고(`.hud-selection` 지속 이슈 참고), 그 자리에서
+   `.hud-selection`/`.hud-joints`의 고정폭 자체를 없애고 부모의 flex stretch로
+   반응형화했다. **이 268px(`.editor-estimate-panel`)은 독립적인 값이라 그 변경과
+   무관하게 그대로 유지된다** — 애초에 "제품 상세 선택 팝업과 같은 폭"이라는 정적
+   합의(2026-08-05)로 박아둔 값이지, `.hud-selection`의 내부 계산에서 매번 다시
+   유도하는 값이 아니다. 처음엔 제품 선택 팝업(`.hud-library`, 300px)과 맞췄었는데
+   사용자가 "제품 상세 선택 팝업"(선택된 아이템 패널)과의 정합으로 정정했다. 이 폭에
+   맞춰 아래 본문 글자 크기도 전반적으로 한 단계씩
+   줄였다. max-height(min(70vh, 640px))는 선택 패널이 없어 컬럼 전체가 비어 있을 때도
+   너무 길게 안 자라게 하는 상한일 뿐 — 실제 자람은 `.editor-right-column`의 남은
+   공간과 flex-shrink(기본값)로 정해진다. */
+.editor-estimate-panel {
+  /* position:relative — 더 이상 이 패널 자체가 화면에 배치되진 않지만(부모 flex 컬럼이
+     한다), .estimate-fold-btn(position:absolute, left:-36px)의 containing block은
+     여전히 이 패널이어야 손잡이가 패널 왼쪽 바깥에 정확히 붙는다. */
+  position: relative;
+  width: 268px;
+  max-height: min(70vh, 640px);
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  /* 불투명 흰 배경 — .glass의 반투명(--glass-bg: 0.72)으로는 뒤 3D 씬이 그대로 비쳐 제품명·
+     금액이 읽히지 않았다(2026-07-31 사용자 요청, 전체 화면 팝업 시절부터 유지). 배경이 완전
+     불투명하면 backdrop-filter는 보이지도 않으면서 GPU만 쓰므로 같이 끈다. */
+  background: #fff;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-color: var(--gray-200);
+  /* 2026-08-05엔 .hud 공용 14px보다 좁은 10px로 위아래만 좁혔었는데, 2026-08-06 사용자
+     요청("견적서 부분 패딩 좀 늘려줘")으로 다시 .hud 표준값(14px)으로 되돌렸다 — 좌우는
+     원래도 14px라 그대로였다. **2026-08-07 오른쪽만 다시 좁힘**(사용자 요청 "견적서
+     스크롤바 오른쪽 간격 줄여줘") — `.estimate-panel-body`는 자기 패딩이 없어 이 컨테이너의
+     오른쪽 패딩이 곧 "스크롤바~패널 오른쪽 테두리" 간격이다. 좌/상/하는 14px 그대로 두고
+     (제목·이름 등 왼쪽 정렬 텍스트는 안 건드림) 오른쪽만 줄인다. */
+  padding-top: 14px;
+  padding-bottom: 14px;
+  padding-right: 8px;
+}
+/* 접힘 상태 배지(2026-08-06 — 얇은 세로 띠+옆 화살표 조합을 대체, 사용자 요청 "견적서를
+   닫으면 우측 상단에 동그라미로 돈 표시가 원 형태로만 뜨게. 그걸 누르면 팝업이 됨") —
+   `.editor-estimate-panel`(glass 패널)째로 다른 엘리먼트(이 버튼 하나)로 갈아치운다. 안쪽
+   콘텐츠만 줄이고 부모 글래스 패널 크기를 그대로 두는 이전 접근은 "빈 투명한 창"이 남는
+   문제로 폐기된 전례가 있다(LibraryPanel 지속 이슈 참고) — 그래서 이번에도 서브트리 전체를
+   바꾼다. `.editor-right-column`의 `align-items:flex-end`를 그대로 물려받아 우측에,
+   `.editor-right-column`이 첫 자식이라 상단에 뜬다("우측 상단"). **2026-08-07 내용을
+   "₩" 텍스트에서 `invoice.svg`(EstimatePanel.tsx 헤더 아이콘과 같은 자산)로 교체** —
+   사용자 요청("해당 버튼 가운데에 '₩' 말고 icon 으로 변경"), 새 아이콘을 만들지 않고 이미
+   같은 파일에서 쓰던 자산을 재사용했다. */
+/* 배경 흰색(2026-08-06, 사용자 요청 "견적서 버튼 배경 흰색으로") — 진한 --primary 채움에서
+   .estimate-fold-btn과 같은 흰 배경+테두리 톤으로. `color`/`font-size`/`font-weight`는
+   "₩" 텍스트 시절의 대비·크기 조정용이었으나 아이콘으로 바뀌며 무의미해져 제거했다
+   (아이콘 자체 색은 `invoice.svg`에 `#292929`로 고정돼 있어 `color`를 안 물려받는다). */
+.estimate-collapsed-badge {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--gray-200);
+  border-radius: 50%;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  pointer-events: auto;
+  box-shadow: var(--glass-shadow);
+  transition:
+    border-color 0.15s ease,
+    transform 0.15s ease;
+}
+.estimate-collapsed-badge:hover {
+  border-color: var(--primary);
+  transform: scale(1.06);
+}
+.estimate-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  /* 제목과 목록(.estimate-panel-body) 사이 여백 — 2026-08-07 처음엔 "5px 정도"로
+     넣었다가, 같은 날 "estimate-panel-header 아래 마진 15px 추가"로 15px로 키웠다.
+     전엔 `.editor-estimate-panel`에 별도 gap이 없어 둘이 그대로 붙어 있었다. */
+  margin-bottom: 15px;
+}
+/* 찜 팝업 헤더 제목(.liked-header-title, 14px)과 같은 크기로 — 전역 .h2(20px)는
+   이 좁아진 패널엔 과했다(2026-08-05). (기준이던 .library-header-title은 같은 날 삭제 —
+   제품 팝업의 '제품' 제목 줄 제거.) */
+.estimate-panel-header .h2 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+}
+.estimate-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+/* 접기 손잡이 — 컨테이너(.editor-estimate-panel, position:relative라 이 버튼의 containing
+   block이다) 왼쪽 테두리 선에 세로 가운데로 절반 겹치는 불투명 원형 버튼. **2026-08-07
+   재조정** — 2026-08-05엔 테두리에서 완전히 떼어 바깥에 고정했었지만(당시 사용자 요청
+   "바깥쪽에 위치") 사용자가 다시 "왼쪽 선 가운데에 겹치게"로 정정해 최초(2026-08-04 이전)
+   방식으로 돌아왔다 — `left`를 버튼 폭(24px)의 절반인 `-12px`로 둬서 버튼 중심이 정확히
+   테두리 선(로컬 x=0) 위에 오게 한다. **2026-08-06부터 펼침 상태의 "접기" 전용이다** — 펼침
+   ↔ 접힘을 오가는 화살표 좌우 전환은 없어졌다(접힘 쪽은 `.estimate-collapsed-badge`).
+   **아이콘은 2026-08-07 `arrow_left.svg` → `arrow_right.svg`로 교체** — 사용자 피드백
+   "접는 버튼이니까 `>`가 되어야 한다"(펼침 상태에서 `<`로 보이면 "접기가 아니라 펼치기
+   버튼처럼 보인다"는 지적, `EstimatePanel.tsx` 참고). 닫기(.flyout-close-btn, 플라이아웃
+   공용 레드 톤)와 달리 판정 시맨틱을 쓰지 않는 중립 톤. */
+.estimate-fold-btn {
+  position: absolute;
+  top: 50%;
+  left: -12px;
+  transform: translateY(-50%);
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--gray-200);
+  border-radius: 999px;
+  background: #fff;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(20, 18, 26, 0.12);
+  transition: border-color 0.15s ease;
+}
+.estimate-fold-btn:hover {
+  border-color: var(--primary);
+}
+/* ⚠ 표준 `scrollbar-color`/`scrollbar-width`를 같은 요소에 선언하면 Chromium이 그 요소의
+   `::-webkit-scrollbar-*` 규칙을 **전부 버린다**(실측: webkit만 두면 트랙 12px, scrollbar-color를
+   추가하면 브라우저 기본 15px로 되돌아간다 — Chrome 148). 그래서 노란 둥근 막대가 필요한
+   Chromium/Safari 경로는 위 ::-webkit 규칙만 쓰고, 표준 속성은 `::-webkit-scrollbar` 셀렉터를
+   모르는 브라우저(Firefox)에만 이 블록으로 내보낸다. 두 방식을 한 요소에 같이 쓰지 말 것. */
+@supports not selector(::-webkit-scrollbar) {
+  .hud-gallery,
+  .editor-rail-flyout,
+  .estimate-panel-body,
+  .editor-selected-panel,
+  .subcategory-row {
+    scrollbar-width: auto;
+    scrollbar-color: var(--color-primary-300)
+      color-mix(in srgb, var(--color-neutral-200) 60%, transparent);
+  }
+}
+
+/* 스크롤바는 제품 패널(.hud-gallery)과 같은 노란 막대로 통일 — 불투명 흰 배경이 되면서
+   브라우저 기본 회색 바만 남아 겉돌았다(2026-07-31). */
+/* 2026-08-07 사용자 요청 "estimate-row-link 스크롤바와 간격 조금 더 띄워줘" — 목록·합계
+   행이 자기 오른쪽 끝(=스크롤바가 붙는 자리)까지 패딩 없이 딱 붙어 있었다. 이 padding-right는
+   `.editor-estimate-panel`의 padding-right(8px, "패널 바깥 테두리~스크롤바" 간격, 위 항목
+   참고)와는 다른 별개의 간격이다 — 그쪽은 스크롤바를 패널 테두리 쪽으로 당기고, 이건
+   스크롤바를 내용(가격 텍스트 등)에서 밀어낸다. */
+.estimate-panel-body {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  padding-right: 8px;
+}
+.estimate-panel-body::-webkit-scrollbar {
+  width: 12px;
+}
+/* 위아래 border를 16px로 키워 막대 세로 길이를 줄임(2026-08-07, 사용자 요청 "견적서
+   스크롤바 세로 길이 줄여줘") — `.hud-gallery`와 같은 패턴(아래 참고), 좌우 4px는 그대로
+   둬서 보이는 폭(ScrollProgress의 w-1)은 안 바뀐다. */
+.estimate-panel-body::-webkit-scrollbar-track {
+  background: color-mix(in srgb, var(--color-neutral-200) 60%, transparent);
+  background-clip: content-box;
+  border-width: 16px 4px;
+  border-style: solid;
+  border-color: transparent;
+  border-radius: 999px;
+}
+.estimate-panel-body::-webkit-scrollbar-thumb {
+  background: var(--color-primary-300);
+  background-clip: content-box;
+  border-width: 16px 4px;
+  border-style: solid;
+  border-color: transparent;
+  border-radius: 999px;
+}
+/* 닫기 재오픈 탭 — 패널을 완전히 닫으면 같은 자리에 이 작은 알약만 남는다. */
+.estimate-reopen-tab {
+  position: absolute;
+  top: 84px;
+  right: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gray-700);
+  background: #fff;
+  cursor: pointer;
+}
+/* 행간 6px → 12px, 행 내부(체크박스~썸네일~이름~수량~가격) 8px → 12px로 확대
+   (2026-08-07, 사용자 요청 "견적서 각 요소들 간격 좀 키워줘. 지금 너무 빽빽해"). */
+.estimate-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.estimate-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+/* 체크박스만 .estimate-row에 남고, 썸네일+이름+수량+가격은 이 래퍼(<Link> 또는 가격
+   미정일 땐 평범한 <div>)가 감싼다(2026-08-06) — 체크박스까지 감싸면 체크 클릭이 상세
+   페이지 이동과 겹친다. 기존 .estimate-row가 갖던 flex 레이아웃 역할을 그대로 물려받고,
+   링크 기본 밑줄·색만 지운다. */
+.estimate-row-link {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  gap: 12px;
+  color: inherit;
+  text-decoration: none;
+}
+/* accent-color만으로는 체크 표시(✓) 색을 못 정한다 — 브라우저가 배경 명도로 자기
+   마음대로 고른다(파스텔 노랑처럼 밝은 배경엔 어두운 체크를 얹는 UA도 있다). 그래서
+   appearance:none으로 네이티브 렌더를 끄고 배경·체크 표시를 각각 직접 그린다(2026-08-06,
+   사용자 요청 "체크 icon 흰색으로, checkbox 배경색은 파스텔 노랑"). 배경은 `--select-accent`
+   (이 스타일시트의 "선택/활성 상태 전용 연한 노랑" 토큰 — `--primary`처럼 진한 CTA 색이
+   아니라 정확히 이 용도로 이미 존재한다). 체크 표시는 테두리 두 변을 45° 회전시키는
+   표준 CSS 체크마크 기법(라이브러리·SVG 불필요). */
+.estimate-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  flex: none;
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  border: 1px solid var(--gray-200);
+  border-radius: 3px;
+  background: #fff;
+  cursor: pointer;
+  position: relative;
+}
+.estimate-checkbox:checked {
+  background: var(--select-accent);
+  border-color: var(--select-accent);
+}
+.estimate-checkbox:checked::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 4px;
+  height: 7px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+.estimate-checkbox:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+.estimate-thumb {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  border-radius: 6px;
+  background: var(--gray-50);
+}
+/* 텍스트 요소 상하 패딩 5px(2026-08-06, 사용자 요청 "견적서 안의 text 요소 패딩 늘려줘") —
+   .estimate-row가 align-items:center라 셋 다 늘리면 행 전체 높이가 같이 늘어나 균등하게
+   숨통이 트인다(체크박스·썸네일 크기는 그대로, 가운데 정렬로 자동 맞춰짐). */
+.estimate-name {
+  flex: 1;
+  min-width: 0;
+  padding: 5px 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gray-800);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.estimate-qty {
+  flex: none;
+  min-width: 24px;
+  padding: 5px 0;
+  text-align: right;
+  font-size: 11px;
+  color: var(--gray-600);
+}
+.estimate-price {
+  flex: none;
+  min-width: 68px;
+  padding: 5px 0;
+  text-align: right;
+  /* 2026-08-07 사용자 요청으로 12px → 11px 축소. */
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gray-800);
+}
+.estimate-name.muted,
+.estimate-price.muted {
+  color: var(--gray-600);
+  font-weight: 500;
+}
+/* 전체 합계 — 불투명 흰 배경에서 --glass-border(반투명 흰색)는 아예 안 보였다. 가장 상위
+   구분이므로 노란선 중 가장 굵게(2026-07-31). */
+.estimate-total-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+  padding-top: 8px;
+  /* 진한 --primary(CTA 톤)에서 --select-accent(연한 노랑)로 변경(2026-08-06, 사용자 요청
+     "합계 위의 구분선도 연한 노랑으로 맞춰줘") — 같은 화면의 체크박스 선택색과 통일. */
+  border-top: 2px solid var(--select-accent);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gray-800);
+}
+
+/* 서버 견적(GET /placements/{id}/estimate) — 저장된 배치에만 붙는다. 위 합계와 값이 갈릴 수
+   있어(저장 전 캔버스 + 체크박스 제외 반영분) 라벨 한 줄로 출처를 구분한다. */
+.estimate-server-block {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--gray-300, rgba(0, 0, 0, 0.15));
+}
+.estimate-server-label {
+  margin: 0 0 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gray-600);
+}
+
+/* 토스트도 경고 배너와 같은 이유로 그리드 트랙 밖에서 화면 하단 가운데에 고정한다. */
+.toast {
+  position: absolute;
+  left: 50%;
+  bottom: 84px;
+  transform: translateX(-50%);
+  pointer-events: auto;
+  padding: 10px 18px;
+  border-radius: 10px;
+  background: rgba(30, 32, 38, 0.92);
+  color: #e8e6f0;
+  font-size: 14px;
+}
+.toast.hidden {
+  display: none;
+}
+
+/* 드롭 제품 GLB 첫 로드 대기 칩 (SimHud.tsx) — 저장 토스트(bottom:84px) 위 한 칸.
+   0.15s 지연 페이드라 캐시 히트(수십 ms)는 화면에 아예 안 보인다. 읽기 전용이라
+   pointer-events를 열지 않는다(.mount-banner와 같은 이유). */
+.asset-loading-chip {
+  position: absolute;
+  left: 50%;
+  bottom: 132px;
+  transform: translateX(-50%);
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: rgba(30, 32, 38, 0.92);
+  color: #e8e6f0;
+  font-size: 14px;
+  opacity: 0;
+  animation: asset-chip-in 0.18s ease 0.15s forwards;
+}
+.asset-loading-chip .spinner {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+}
+@keyframes asset-chip-in {
+  to {
+    opacity: 1;
+  }
+}
+
+/* --- 첫 방문 코치마크 투어 (SimulatorCoachTour.tsx / CoachBubble.tsx) --- */
+/* .hud(199행)보다 뒤에 와야 padding 오버라이드가 먹는다(동일 특이성 0-1-0, 소스 순서 승). */
+.sim-coach-root {
+  position: fixed;
+  inset: 0;
+  z-index: 15; /* HUD 패널(z auto) 위 · .modal-overlay(20) 아래 */
+  padding: 0;
+  overflow: hidden; /* box-shadow 확산이 스크롤바를 만들지 않게 */
+  cursor: pointer; /* 아무 곳이나 클릭 = 다음 */
+}
+.sim-coach-hole {
+  position: fixed;
+  pointer-events: none;
+  border-radius: var(--radius);
+  /* 딤 = 구멍 바깥으로 퍼지는 그림자 하나. backdrop-filter가 없으므로 글래스 3장 상한
+     (DESIGN-SYSTEM §2.3)과 무관하고 fixed containing block도 안 만든다. */
+  box-shadow: 0 0 0 9999px rgba(24, 22, 20, 0.55);
+  transition:
+    top 0.22s ease-out,
+    left 0.22s ease-out,
+    width 0.22s ease-out,
+    height 0.22s ease-out;
+}
+.sim-coach-hole::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1px solid var(--glass-border);
+}
+.sim-coach-bubble {
+  position: fixed;
+  width: 288px; /* = TOUR_BUBBLE_WIDTH_PX */
+  padding: 14px 16px;
+  border-radius: 12px; /* = TOUR_BUBBLE_CORNER_PX */
+  /* 불투명 흰색 — .glass를 쓰지 않는다: 3D 씬 위 가독성이자 backdrop-filter 패널 상한(≤3)을
+     이 오버레이가 잡아먹지 않게. */
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  box-shadow: var(--glass-shadow);
+  transition:
+    top 0.22s ease-out,
+    left 0.22s ease-out;
+}
+.sim-coach-bubble::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 0;
+  border: 8px solid transparent; /* = TOUR_ARROW_SIZE_PX */
+}
+.sim-coach-bubble[data-side='right']::after {
+  left: -16px;
+  top: var(--coach-arrow);
+  margin-top: -8px;
+  border-right-color: #fff;
+}
+.sim-coach-bubble[data-side='left']::after {
+  right: -16px;
+  top: var(--coach-arrow);
+  margin-top: -8px;
+  border-left-color: #fff;
+}
+.sim-coach-bubble[data-side='bottom']::after {
+  top: -16px;
+  left: var(--coach-arrow);
+  margin-left: -8px;
+  border-bottom-color: #fff;
+}
+.sim-coach-bubble[data-side='top']::after {
+  bottom: -16px;
+  left: var(--coach-arrow);
+  margin-left: -8px;
+  border-top-color: #fff;
+}
+.sim-coach-bubble[data-side='center']::after {
+  display: none;
+}
+.sim-coach-title {
+  margin: 0 0 6px;
+  font-size: 15px;
+  font-weight: 650;
+  color: var(--gray-800);
+}
+.sim-coach-body {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--gray-600);
+}
+.sim-coach-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 14px;
+}
+.sim-coach-count {
+  font-size: 12px;
+  color: var(--gray-400);
+  font-variant-numeric: tabular-nums;
+}
+.sim-coach-next {
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 16px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  /* 연한 노랑 — --primary 대면적 채움 금지(DESIGN-SYSTEM §1) */
+  background: var(--select-accent);
+  color: var(--gray-800);
+}
+.sim-coach-skip {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--gray-200);
+  color: var(--gray-600);
+}
+@media (prefers-reduced-motion: reduce) {
+  .sim-coach-hole,
+  .sim-coach-bubble {
+    transition: none;
+  }
+}

@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dero.local/schemas/light-manifest.schema.json",
+  "title": "DERO Light Manifest",
+  "type": "object",
+  "required": ["schemaVersion", "asset", "classification", "binding", "materialBindings", "hybridLighting", "materialResponse", "controls", "review"],
+  "properties": {
+    "schemaVersion": { "const": "1.0.0" },
+    "asset": {
+      "type": "object",
+      "required": ["modelFile", "assetVersion", "coordinateSpace", "unit"],
+      "properties": {
+        "modelFile": { "type": "string", "minLength": 1 },
+        "assetVersion": { "type": "string", "minLength": 1 },
+        "coordinateSpace": { "enum": ["NORMALIZED_MODEL_LOCAL", "ORIGINAL_MODEL_LOCAL"] },
+        "unit": { "const": "METER" }
+      }
+    },
+    "classification": {
+      "type": "object",
+      "required": ["lightingRole", "renderPreset", "confidence"],
+      "properties": {
+        "lightingRole": { "enum": ["DESK_TASK", "MONITOR_TASK", "AMBIENT_POINT", "AMBIENT_INDIRECT", "DECORATIVE_EMISSIVE", "STRIP_PATH"] },
+        "renderPreset": { "enum": ["DESK_TASK_HYBRID", "MONITOR_TASK_HYBRID", "AMBIENT_POINT_HYBRID", "AMBIENT_INDIRECT_HYBRID", "DECORATIVE_EMISSIVE", "STRIP_PATH_HYBRID"] },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "binding": {
+      "type": "object",
+      "required": ["mode", "originNode", "targetNode", "fallbackOrigin", "fallbackTarget"],
+      "properties": {
+        "mode": { "const": "MODEL_LOCAL" },
+        "originNode": { "type": ["string", "null"] },
+        "targetNode": { "type": ["string", "null"] },
+        "fallbackOrigin": { "$ref": "#/$defs/vec3" },
+        "fallbackTarget": { "anyOf": [{ "$ref": "#/$defs/vec3" }, { "type": "null" }] }
+      }
+    },
+    "materialBindings": { "type": "object" },
+    "hybridLighting": {
+      "type": "object",
+      "required": ["main", "fill", "bouncePolicies"],
+      "properties": {
+        "main": { "$ref": "#/$defs/mainLight" },
+        "fill": { "$ref": "#/$defs/fillLight" },
+        "bouncePolicies": { "type": "array", "items": { "$ref": "#/$defs/bouncePolicy" } }
+      }
+    },
+    "materialResponse": { "type": "object" },
+    "controls": { "type": "object" },
+    "review": { "type": "object" },
+    "overrides": { "type": "object" }
+  },
+  "$defs": {
+    "vec3": {
+      "type": "array",
+      "prefixItems": [{ "type": "number" }, { "type": "number" }, { "type": "number" }],
+      "minItems": 3,
+      "maxItems": 3
+    },
+    "mainLight": {
+      "type": "object",
+      "required": ["type", "intensityRatio", "rangeM", "angleDeg", "penumbra", "castShadow", "shadowPriority"],
+      "properties": {
+        "type": { "enum": ["POINT", "SPOT", "RECT_AREA", "DIRECTIONAL"] },
+        "intensityRatio": { "type": "number", "minimum": 0, "maximum": 10 },
+        "rangeM": { "type": "number", "exclusiveMinimum": 0 },
+        "angleDeg": { "type": "number", "minimum": 1, "maximum": 179 },
+        "penumbra": { "type": "number", "minimum": 0, "maximum": 1 },
+        "castShadow": { "type": "boolean" },
+        "shadowPriority": { "type": "integer", "minimum": 0, "maximum": 10 }
+      }
+    },
+    "fillLight": {
+      "type": "object",
+      "required": ["enabled", "type", "localOffset", "intensityRatio", "rangeM", "castShadow"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "type": { "const": "POINT" },
+        "localOffset": { "$ref": "#/$defs/vec3" },
+        "intensityRatio": { "type": "number", "minimum": 0, "maximum": 10 },
+        "rangeM": { "type": "number", "exclusiveMinimum": 0 },
+        "castShadow": { "const": false }
+      }
+    },
+    "bouncePolicy": {
+      "type": "object",
+      "required": ["role", "enabled", "intensityRatio", "rangeRatio", "colorMode"],
+      "properties": {
+        "role": { "enum": ["DESK_BOUNCE", "WALL_BOUNCE", "REAR_WALL_BOUNCE", "DOWNWARD_BOUNCE", "FLOOR_BOUNCE", "NO_BOUNCE"] },
+        "enabled": { "type": "boolean" },
+        "intensityRatio": { "type": "number", "minimum": 0, "maximum": 1 },
+        "rangeRatio": { "type": "number", "minimum": 0, "maximum": 5 },
+        "colorMode": { "enum": ["SOURCE_TINTED", "SURFACE_MIXED", "NEUTRAL"] }
+      }
+    }
+  }
+}

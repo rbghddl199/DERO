@@ -1,0 +1,285 @@
+@import 'tailwindcss';
+
+:root {
+  --color-neutral-50: #fcfbf7;
+  --color-neutral-100: #f6f3eb;
+  --color-neutral-200: #eae4d7;
+  --color-neutral-300: #d5cbb9;
+  --color-neutral-400: #b8a992;
+  --color-neutral-500: #96846b;
+  --color-neutral-600: #73624d;
+  --color-neutral-700: #554837;
+  --color-neutral-800: #3f3528;
+  --color-neutral-900: #2d251b;
+
+  --color-primary-50: #fffbeb;
+  --color-primary-100: #fef3d2;
+  --color-primary-200: #fce4a6;
+  --color-primary-300: #f8d172;
+  --color-primary-400: #f0bb4c;
+  --color-primary-500: #e8a93a;
+  --color-primary-600: #c98a24;
+  --color-primary-700: #a16b1a;
+  --color-primary-800: #7a5015;
+  --color-primary-900: #5c3c12;
+
+  --color-decor-yellow: #f0bb4c;
+  --color-decor-peach: #f5b98a;
+  --color-decor-ivory: #fff8ec;
+
+  --color-success-50: #f0fdf4;
+  --color-success-500: #22c55e;
+  --color-success-700: #15803d;
+
+  --color-warning-50: #fff1e8;
+  --color-warning-500: #e8722c;
+  --color-warning-700: #b34f16;
+
+  --color-danger-50: #fef2f2;
+  --color-danger-500: #ef4444;
+  --color-danger-700: #b91c1c;
+
+  /* frontend/DESIGN.md — 커뮤니티 등 마케팅 성격 페이지 전용 모노톤 팔레트(웜옐로우 리브랜딩 이전 도입분, 값 유지) */
+  --color-ink: #1a1a1a;
+  --color-paper: #ffffff;
+  --color-fog: #f4f4f4;
+  --color-ash: #a3a3a3;
+  --color-highlight: #fef4e0;
+
+  --background: var(--color-paper);
+  --foreground: var(--color-neutral-800);
+
+  /* 'Pretendard Variable' 패밀리는 layout.tsx가 import하는 pretendard dynamic-subset CSS가
+     unicode-range 92분할로 정의한다(DERO-607). next/font를 쓰면 통짜 2.0MB를 받는다. */
+  --font-pretendard:
+    'Pretendard Variable', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-neutral-50: var(--color-neutral-50);
+  --color-neutral-100: var(--color-neutral-100);
+  --color-neutral-200: var(--color-neutral-200);
+  --color-neutral-300: var(--color-neutral-300);
+  --color-neutral-400: var(--color-neutral-400);
+  --color-neutral-500: var(--color-neutral-500);
+  --color-neutral-600: var(--color-neutral-600);
+  --color-neutral-700: var(--color-neutral-700);
+  --color-neutral-800: var(--color-neutral-800);
+  --color-neutral-900: var(--color-neutral-900);
+
+  --color-primary-50: var(--color-primary-50);
+  --color-primary-100: var(--color-primary-100);
+  --color-primary-200: var(--color-primary-200);
+  --color-primary-300: var(--color-primary-300);
+  --color-primary-400: var(--color-primary-400);
+  --color-primary-500: var(--color-primary-500);
+  --color-primary-600: var(--color-primary-600);
+  --color-primary-700: var(--color-primary-700);
+  --color-primary-800: var(--color-primary-800);
+  --color-primary-900: var(--color-primary-900);
+
+  --color-decor-yellow: var(--color-decor-yellow);
+  --color-decor-peach: var(--color-decor-peach);
+  --color-decor-ivory: var(--color-decor-ivory);
+
+  --color-success-50: var(--color-success-50);
+  --color-success-500: var(--color-success-500);
+  --color-success-700: var(--color-success-700);
+  --color-warning-50: var(--color-warning-50);
+  --color-warning-500: var(--color-warning-500);
+  --color-warning-700: var(--color-warning-700);
+  --color-danger-50: var(--color-danger-50);
+  --color-danger-500: var(--color-danger-500);
+  --color-danger-700: var(--color-danger-700);
+
+  --color-ink: var(--color-ink);
+  --color-paper: var(--color-paper);
+  --color-fog: var(--color-fog);
+  --color-ash: var(--color-ash);
+  --color-highlight: var(--color-highlight);
+
+  --font-sans: var(--font-pretendard);
+  --font-swiss: var(--font-pretendard);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+
+/* Tailwind v4 Preflight는 button에 cursor:default를 건다(v3까진 브라우저 UA 기본값이 pointer였다).
+   이 저장소엔 공용 Button 컴포넌트가 없어 버튼마다 cursor-pointer를 손으로 붙이는 관례라
+   ~55개 버튼에서 누락돼 있었다(로그인 OAuth 버튼 포함) — base 레이어에서 한 번에 되돌린다.
+   :disabled를 제외해야 각 버튼의 disabled:cursor-not-allowed가 그대로 이긴다. */
+@layer base {
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']),
+  summary {
+    cursor: pointer;
+  }
+}
+
+/* 브라우저 기본 스크롤바 숨김 — ScrollProgress(자체 인디케이터 동반)나 HideScrollbar(인디케이터 없음)가 마운트 시 html에 토글 */
+html.hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+html.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* 제품 카테고리 사이드바: 스크롤바 숨김 — 휠 라우팅은 브라우저 네이티브(커서 아래의 스크롤
+   컨테이너로 감: 사이드바 hover=사이드바, 목록 hover=페이지). overscroll-behavior로 사이드바
+   끝에서 페이지로 새는 체이닝 차단. */
+.product-category-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  overscroll-behavior-y: contain;
+}
+
+.product-category-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* 옐로우 스크롤바 — ScrollProgress(문서 전체 스크롤)와 같은 색 규칙(썸 primary-300 / 트랙
+   neutral-200 60%)을 개별 overflow 컨테이너(모달 본문 등)에도 쓸 때 적용한다. 표준
+   scrollbar-color/-width를 webkit 규칙과 같은 요소에 두면 Chromium이 webkit 쪽을 통째로
+   버리므로(three/components/simulator/CLAUDE.md 스크롤바 트랩과 동일 원인) @supports 안에만 둔다.
+   히트 영역 12px, 시각 폭은 4px(border 4px transparent + background-clip:content-box). */
+.scrollbar-primary::-webkit-scrollbar {
+  width: 12px;
+}
+.scrollbar-primary::-webkit-scrollbar-track {
+  background: color-mix(in srgb, var(--color-neutral-200) 60%, transparent);
+  border: 4px solid transparent;
+  background-clip: content-box;
+  border-radius: 999px;
+}
+.scrollbar-primary::-webkit-scrollbar-thumb {
+  background: var(--color-primary-300);
+  border: 4px solid transparent;
+  background-clip: content-box;
+  border-radius: 999px;
+}
+@supports not selector(::-webkit-scrollbar) {
+  .scrollbar-primary {
+    scrollbar-color: var(--color-primary-300)
+      color-mix(in srgb, var(--color-neutral-200) 60%, transparent);
+    scrollbar-width: thin;
+  }
+}
+
+/* 커뮤니티 본문 리치 텍스트 — Tiptap 직렬화기(serializeEditorContent.ts)가 만드는 고정 팔레트 class.
+   이름·값을 바꾸면 richTextClasses.ts(직렬화기·툴바·PostContent의 sanitize 허용 목록이 공유하는
+   단일 출처)도 함께 바꿀 것. */
+.text-color-red {
+  color: #ef4444;
+}
+.text-color-orange {
+  color: #e8722c;
+}
+.text-color-green {
+  color: #22c55e;
+}
+.text-color-blue {
+  color: #2563eb;
+}
+.text-color-purple {
+  color: #9333ea;
+}
+
+.text-align-center {
+  text-align: center;
+}
+.text-align-right {
+  text-align: right;
+}
+
+/* 데스크피드 상세 좌측 제품 레일 — 보는 사진이 바뀌어 내용이 갈릴 때 150ms 페이드(ADR-0040 결정 5 개정) */
+@keyframes desk-rail-fade {
+  from {
+    opacity: 0;
+  }
+}
+.desk-rail-fade {
+  animation: desk-rail-fade 150ms ease-out;
+}
+
+/* Tiptap 에디터(PostRichEditor) 빈 문단 placeholder — 에디터 DOM 최상위엔 기본으로 .tiptap 클래스가 붙는다 */
+.tiptap p.is-editor-empty:first-child::before {
+  color: var(--color-ash);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+/* 에디터 안 노드 스타일 — PostContent.tsx 렌더러의 미러(DERO-627).
+   Tailwind preflight가 헤딩·목록·인용을 본문과 동일하게 리셋해 적용해도 보이지 않던 것.
+   값을 바꾸면 PostContent.tsx의 해당 렌더러 class도 함께 바꿀 것(위지윅 = 에디터=결과물). */
+.tiptap h1 {
+  color: var(--color-ink);
+  font-size: 20px;
+  font-weight: 500;
+  margin: 1.5rem 0 0.5rem;
+}
+.tiptap h2 {
+  color: var(--color-ink);
+  font-size: 18px;
+  font-weight: 500;
+  margin: 1.25rem 0 0.5rem;
+}
+.tiptap h3 {
+  color: var(--color-ink);
+  font-size: 16px;
+  font-weight: 500;
+  margin: 1rem 0 0.375rem;
+}
+.tiptap p {
+  color: var(--color-ink);
+  font-size: 15px;
+  line-height: 1.7;
+  margin-bottom: 0.75rem;
+}
+.tiptap ul,
+.tiptap ol {
+  color: var(--color-ink);
+  font-size: 15px;
+  line-height: 1.6;
+  margin-bottom: 0.75rem;
+  padding-left: 1.25rem;
+}
+.tiptap ul {
+  list-style-type: disc;
+}
+.tiptap ol {
+  list-style-type: decimal;
+}
+.tiptap li + li {
+  margin-top: 0.25rem;
+}
+/* 리스트 항목 안의 문단은 Tiptap이 li > p로 감싼다 — 문단 하단 여백이 항목 간격을 이중으로 벌리지 않게 0 */
+.tiptap li p {
+  margin-bottom: 0;
+}
+.tiptap blockquote {
+  border-left: 2px solid color-mix(in srgb, var(--color-ash) 40%, transparent);
+  color: var(--color-ash);
+  font-size: 15px;
+  font-style: italic;
+  margin: 0.75rem 0;
+  padding-left: 1rem;
+}
+.tiptap strong {
+  font-weight: 500;
+}
+.tiptap a {
+  color: var(--color-primary-700);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}

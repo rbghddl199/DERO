@@ -1,0 +1,65 @@
+{
+  "settings": {
+    "index": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0
+    },
+    "analysis": {
+      "tokenizer": {
+        "nori": {
+          "type": "nori_tokenizer",
+          "decompound_mode": "mixed"
+        },
+        "title_edge_ngram": {
+          "type": "edge_ngram",
+          "min_gram": 2,
+          "max_gram": 20,
+          "token_chars": ["letter", "digit"]
+        }
+      },
+      "analyzer": {
+        "korean": {
+          "type": "custom",
+          "tokenizer": "nori",
+          "filter": ["lowercase"]
+        },
+        "korean_edge_ngram": {
+          "type": "custom",
+          "tokenizer": "title_edge_ngram",
+          "filter": ["lowercase"]
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "title": {
+        "type": "text",
+        "analyzer": "korean",
+        "fields": {
+          "autocomplete": {
+            "type": "text",
+            "analyzer": "korean_edge_ngram",
+            "search_analyzer": "korean"
+          }
+        }
+      },
+      "content": {
+        "type": "text",
+        "analyzer": "korean"
+      },
+      "tags": {
+        "type": "keyword",
+        "fields": {
+          "text": {
+            "type": "text",
+            "analyzer": "korean"
+          }
+        }
+      },
+      "userId": {
+        "type": "long"
+      }
+    }
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "hooks": [
+          { "type": "command", "command": "bash .claude/hooks/erd-freeze.sh", "timeout": 10 },
+          { "type": "command", "command": "bash .claude/hooks/flyway-v1-freeze.sh", "timeout": 10 },
+          { "type": "command", "command": "node .claude/hooks/block-no-verify.js", "timeout": 10 }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          { "type": "command", "command": "bash .claude/hooks/plugin-check.sh codex", "timeout": 10 },
+          { "type": "command", "command": "bash .claude/hooks/graphify-stale-check.sh", "timeout": 10 }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          { "type": "command", "command": "bash .claude/hooks/harness-check.sh", "timeout": 30 }
+        ]
+      }
+    ]
+  }
+}

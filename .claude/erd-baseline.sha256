@@ -1,0 +1,3 @@
+# docs/context/erd.md 동결 기준선. 갱신은 --rebaseline(언락 창 안에서만).
+# 사유: 데스크피드 이미지별 상품 태그 기능
+cad68fb0ad3a28584b3d0d3c890d06660bd9069073dbabb10bcdc4c68ac68a14  2026-08-12

@@ -1,0 +1,21 @@
+# 줄바꿈 정규화 — 저장소도 LF, 체크아웃도 LF. (2026-07-27, DERO-178)
+#
+# 왜: Windows 체크아웃이 작업 트리를 CRLF로 바꾸면 디스크 바이트가 달라져
+#     내용 해시 기반 장치(ERD 동결 훅)가 상시 오탐한다. 셸 스크립트도 CRLF면
+#     WSL·리눅스에서 실행이 깨진다.
+# text=auto: 내용을 보고 텍스트/바이너리를 git이 판별한다.
+# eol=lf   : 텍스트로 판별된 것은 OS 무관하게 LF로 체크아웃한다.
+* text=auto eol=lf
+
+# 바이너리 명시 — text=auto 오판을 막는다.
+*.glb   binary
+*.hdr   binary
+*.wasm  binary
+*.jar   binary
+*.pyc   binary
+*.png   binary
+*.jpg   binary
+*.ico   binary
+
+# backend/dero-api/.gitattributes가 gradlew·*.bat·*.jar을 따로 다룬다.
+# 깊은 디렉터리의 규칙이 우선이라 gradlew.bat은 CRLF를 유지한다.

@@ -1,0 +1,7 @@
+#
+#Thu Jul 30 14:56:10 KST 2026
+@Test\ \uBA54\uC11C\uB4DC\uB294\ @DisplayName\uC744\ \uAC16\uB294\uB2E4=90ab2781-4519-4577-a40a-c3fbcc8deb9e
+Illegal*Exception\u00B7UncheckedIOException\ \uC744\ \uC0DD\uC131\uD558\uC9C0\ \uC54A\uB294\uB2E4=a0a8531d-f115-49c2-ad32-f54bd040366f
+global\uC740\ \uB3C4\uBA54\uC778\u00B7infra\uC5D0\ \uC758\uC874\uD558\uC9C0\ \uC54A\uB294\uB2E4=3b04503e-ca8f-438d-a148-bfb936946644
+no\ classes\ should\ access\ standard\ streams,\ because\ \uB85C\uAE45\ \uC815\uCC45\uACFC\ \uBB34\uAD00\uD558\uAC8C\ stdout\ \uC720\uCD9C\uC774\uACE0\ \uB808\uBCA8\u00B7\uD544\uD130\uAC00\ \uC5C6\uB2E4\ (ADR-0012\ \uACB0\uC815\ 9)=557c8e94-cce2-40a0-9227-e7e509f4ee1b
+\uCEE8\uD2B8\uB864\uB7EC\uB294\ \uB9AC\uD3EC\uC9C0\uD1A0\uB9AC\uC5D0\ \uC758\uC874\uD558\uC9C0\ \uC54A\uB294\uB2E4=c1f835d3-710c-48c0-adcc-d8ae726a1b71
