@@ -55,16 +55,16 @@
   .s1 .lead { font-size: 19px; line-height: 1.75; color: #444; margin-top: 18px; width: 560px; word-break: keep-all; }
   .s1 .lead b { color: var(--ink); font-weight: 700; }
   .s1 .laptop { position: absolute; right: 30px; top: 150px; width: 470px; filter: drop-shadow(0 24px 30px rgba(0,0,0,.16)); }
-  .s1 .facts { position: absolute; left: 84px; right: 84px; bottom: 76px; display: grid; grid-template-columns: 1.15fr .8fr 1.45fr 1.4fr; gap: 16px; }
-  .fact { border: 2px solid var(--ink); border-radius: 18px; padding: 20px 22px; background: #fff; }
+  .s1 .facts { position: absolute; left: 84px; right: 84px; bottom: 76px; display: grid; grid-template-columns: 1.2fr .8fr .8fr 1.3fr 1.5fr; gap: 14px; }
+  .fact { border: 2px solid var(--ink); border-radius: 18px; padding: 20px 18px; background: #fff; }
   .fact .k { font-size: 14px; font-weight: 700; color: var(--gray); letter-spacing: .5px; }
-  .fact .v { white-space: nowrap; font-size: 20px; font-weight: 800; margin-top: 8px; letter-spacing: -.5px; }
+  .fact .v { white-space: nowrap; font-size: 19px; font-weight: 800; margin-top: 8px; letter-spacing: -.5px; }
   .fact.award { background: var(--ink); color: #fff; display: flex; align-items: center; gap: 14px; padding: 20px 18px; }
   .fact.award .k { color: rgba(255,255,255,.55); }
   .fact.award .v { color: var(--yellow); }
   .fact.award svg { flex: none; }
-  .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-  .tags span { font-size: 14px; font-weight: 700; padding: 5px 11px; border-radius: 999px; background: var(--cream); border: 1.5px solid var(--ink); }
+  .tags { display: flex; flex-wrap: nowrap; gap: 6px; margin-top: 8px; }
+  .tags span { white-space: nowrap; font-size: 13px; font-weight: 700; padding: 5px 11px; border-radius: 999px; background: var(--cream); border: 1.5px solid var(--ink); }
   .tagline { position: absolute; left: 584px; bottom: 236px; font-weight: 900; font-size: 64px; letter-spacing: -2.5px; color: rgba(28,27,25,.08); white-space: nowrap; z-index: 2; pointer-events: none; }
 
   /* ---------- 02 ---------- */
@@ -120,7 +120,7 @@
     <h2>프로젝트 소개</h2>
     <div class="eyebrow">PROJECT OVERVIEW</div>
     <div class="bar"></div>
-    <p>실제 제품을 구매하기 전에<br><b>3D 공간에서 배치와 조합</b>을 확인해<br>불필요한 구매와 공간 구성의<br>시행착오를 줄입니다.</p>
+    <p>제품을 구매하기 전<br><b>가상 공간에서 배치와 조합</b>을 확인해<br>불필요한 구매와 공간 구성의<br>시행착오를 줄입니다.</p>
     <div class="ground"></div>
     <img class="mascot m1" src="assets/mascot-1.png" alt="">
   </div>
@@ -129,15 +129,16 @@
     <div class="kicker">실측 기반 3D 데스크테리어 시뮬레이터</div>
     <img class="logo" src="assets/logo.svg" alt="DERO">
     <h3>내 책상, 사기 전에<br><span class="hl">3D로 먼저 배치</span>해 보세요.</h3>
-    <p class="lead"><b>DERO</b>는 실제 제품 규격을 기반으로 자신만의 데스크 환경을 미리 구성하고, <b>제품 간 호환성과 예산</b>을 확인할 수 있는 3D 데스크테리어 시뮬레이션 서비스입니다.</p>
+    <p class="lead"><b>DERO</b>는 실제 제품 규격을 기반으로 자신만의 데스크 환경을 구성하고, <b>제품 간 호환성과 예산</b>을 미리 확인할 수 있는 3D 데스크테리어 서비스입니다.</p>
     <img class="laptop" src="assets/laptop.png" alt="">
     <div class="facts">
       <div class="fact"><div class="k">개발 기간</div><div class="v">2026.07 ~ 2026.08</div></div>
       <div class="fact"><div class="k">프로젝트 유형</div><div class="v">팀 프로젝트</div></div>
-      <div class="fact"><div class="k">주요 기술</div><div class="tags"><span>React</span><span>TypeScript</span><span>Tailwind CSS</span><span>GLB</span></div></div>
+      <div class="fact"><div class="k">담당 역할</div><div class="v">Frontend</div></div>
+      <div class="fact"><div class="k">주요 기술</div><div class="tags"><span>React</span><span>Tailwind CSS</span></div></div>
       <div class="fact award">
         <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#FFCD4A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4Z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg>
-        <div><div class="k">주요 성과</div><div class="v">프로젝트 최우수상</div></div>
+        <div><div class="k">주요 성과</div><div class="v">프로젝트 우수상</div></div>
       </div>
     </div>
     <div class="page"><b>01</b> / 04</div>
@@ -151,7 +152,7 @@
     <h2>배경 및 문제점</h2>
     <div class="eyebrow">BACKGROUND</div>
     <div class="bar"></div>
-    <p>데스크테리어 제품은<br>실제로 구매하고 설치하기 전까지<br><b>크기·색상·호환성</b>을<br>정확하게 파악하기 어렵습니다.</p>
+    <p>데스크테리어 제품은<br>실제 구매 후 설치하기 전까지<br><b>크기와 배치 적합성</b>을<br>정확하게 판단하기 어렵습니다.</p>
     <div class="ground"></div>
     <img class="mascot m2" src="assets/mascot-2.png" alt="">
   </div>
@@ -164,21 +165,21 @@
         <div class="t">규격 불일치</div><div class="d">모니터암 클램프와 책상 상판 두께처럼 설치 조건이 맞지 않는 경우</div></div>
       <div class="prob"><span class="x">02</span>
         <div class="ic"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1C1B19" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="11" height="11" rx="1.5"/><rect x="10" y="10" width="11" height="11" rx="1.5"/></svg></div>
-        <div class="t">공간 간섭</div><div class="d">제품끼리 겹치거나 책상 위 공간이 부족해 배치가 어려운 경우</div></div>
+        <div class="t">공간 부족</div><div class="d">책상 위 공간이 모자라 제품을 원하는 대로 배치하기 어려운 경우</div></div>
       <div class="prob"><span class="x">03</span>
-        <div class="ic"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1C1B19" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17 9 11l4 4 8-8"/><path d="M15 7h6v6"/></svg></div>
-        <div class="t">예산 초과</div><div class="d">제품을 하나씩 더하다 보면 예상보다 커지는 전체 비용</div></div>
+        <div class="ic"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1C1B19" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div>
+        <div class="t">전체 구성 파악</div><div class="d">쇼핑몰의 이미지와 제품 정보만으로는 데스크 전체 모습을 알기 어려움</div></div>
     </div>
     <div class="arrow"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#1C1B19" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v16M5 13l7 7 7-7"/></svg></div>
     <div class="solve">
       <span class="chip">SOLUTION</span>
-      <span class="t">실제 제품의 <b>규격과 가격</b>을 기반으로, 구매 전 데스크 환경을 검토하는 <b>3D 시뮬레이터</b></span>
+      <span class="t">실제 제품 규격으로 데스크를 미리 구성하고, 구매 전 <b>배치와 예산</b>을 검토하는 서비스</span>
     </div>
     <div class="stats">
       <div class="stat"><div class="n">93.3<small>%</small></div>
-        <div><div class="k">사전 사용자 설문</div><div class="v">배치 미리보기 기능 긍정 응답</div><div class="meter"><i style="width:93.3%"></i></div></div></div>
+        <div><div class="k">서비스 사용자 설문</div><div class="v">서비스 긍정 응답</div><div class="meter"><i style="width:93.3%"></i></div></div></div>
       <div class="stat"><div class="n">88.6<small>%</small></div>
-        <div><div class="k">사전 사용자 설문</div><div class="v">서비스 사용 의향</div><div class="meter"><i style="width:88.6%"></i></div></div></div>
+        <div><div class="k">서비스 사용자 설문</div><div class="v">서비스 사용 의향</div><div class="meter"><i style="width:88.6%"></i></div></div></div>
     </div>
     <div class="page"><b>02</b> / 04</div>
   </div>
@@ -191,7 +192,7 @@
     <h2>주요 기능</h2>
     <div class="eyebrow">KEY FEATURES</div>
     <div class="bar"></div>
-    <p>배치부터 호환성, 예산, 공유까지<br><b>구매 전 데스크 검토</b>에 필요한<br>흐름을 하나로 담았습니다.</p>
+    <p>배치부터 호환성, 예산, 공유,<br>마이페이지까지 <b>구매 전 데스크 검토</b>에<br>필요한 흐름을 하나로 담았습니다.</p>
     <div class="ground"></div>
     <img class="mascot m3" src="assets/mascot-3.png" alt="">
   </div>
@@ -199,12 +200,12 @@
     <div class="kicker">FEATURES</div>
     <h3>DERO에서 할 수 있는 것</h3>
     <div class="feats">
-      <div class="feat"><div class="no">1</div><div><div class="t">3D 데스크 시뮬레이터</div><div class="d">실제 제품 크기를 반영한 데스크 환경 구성</div></div></div>
-      <div class="feat"><div class="no">2</div><div><div class="t">배치 및 호환성 검토</div><div class="d">제품 간 크기와 설치 조건을 고려한 배치 확인</div></div></div>
-      <div class="feat"><div class="no">3</div><div><div class="t">다중 카메라 시점</div><div class="d">1인칭 · 3인칭 · 탑뷰 · 후면뷰 제공</div></div></div>
-      <div class="feat"><div class="no">4</div><div><div class="t">벽면 표시 전환</div><div class="d">좌 · 우 · 앞 3면의 벽을 개별로 표시 및 숨김</div></div></div>
-      <div class="feat"><div class="no">5</div><div><div class="t">예산 관리</div><div class="d">선택한 제품의 가격으로 예상 비용 확인</div></div></div>
-      <div class="feat"><div class="no">6</div><div><div class="t">커뮤니티</div><div class="d">데스크 구성 공유 및 사용자 간 정보 교류</div></div></div>
+      <div class="feat"><div class="no">1</div><div><div class="t">3D 데스크 시뮬레이터</div><div class="d">실제 제품 규격을 반영한 데스크 환경 구성</div></div></div>
+      <div class="feat"><div class="no">2</div><div><div class="t">배치 및 호환성 확인</div><div class="d">제품 간 크기와 설치 조건을 고려한 배치 검토</div></div></div>
+      <div class="feat"><div class="no">3</div><div><div class="t">카메라 및 벽면 설정</div><div class="d">다양한 시점과 벽면 표시 전환으로 공간 확인</div></div></div>
+      <div class="feat"><div class="no">4</div><div><div class="t">제품 및 예산 관리</div><div class="d">선택한 제품 정보와 예상 구매 비용 확인</div></div></div>
+      <div class="feat"><div class="no">5</div><div><div class="t">커뮤니티</div><div class="d">데스크 구성 공유 및 사용자 간 정보 교류</div></div></div>
+      <div class="feat"><div class="no">6</div><div><div class="t">마이페이지</div><div class="d">개인 정보, 저장한 구성 및 활동 내역 관리</div></div></div>
     </div>
     <div class="page"><b>03</b> / 04</div>
   </div>
@@ -225,9 +226,9 @@
     <div class="kicker">SCREENSHOTS</div>
     <h3>직접 배치하고, 확인하고, 공유하기</h3>
     <div class="shots">
-      <div class="shot big"><img src="assets/sim.png" alt=""><div class="cap"><i>2</i>3D 데스크 시뮬레이터 <em>배치 · 카메라 전환 · 벽면 표시</em></div></div>
+      <div class="shot big"><img src="assets/sim.png" alt=""><div class="cap"><i>2</i>3D 데스크 시뮬레이터 <em>제품 선택 · 배치 · 카메라 전환</em></div></div>
       <div class="shot mock"><img src="assets/laptop.png" alt=""><div class="cap"><i>1</i>메인 화면</div></div>
-      <div class="shot"><img src="assets/product.png" alt=""><div class="cap"><i>3</i>제품 구성 · 예산 확인</div></div>
+      <div class="shot"><img src="assets/product.png" alt=""><div class="cap"><i>3</i>제품 정보 · 예산 확인</div></div>
       <div class="shot"><img src="assets/community.png" alt=""><div class="cap"><i>4</i>커뮤니티</div></div>
     </div>
     <div class="page"><b>04</b> / 04</div>
