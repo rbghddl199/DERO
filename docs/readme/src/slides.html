@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>DERO README Slides</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --yellow: #FFCD4A;
+    --yellow-deep: #ECBB20;
+    --cream: #FFF4D2;
+    --ink: #1C1B19;
+    --charcoal: #3B3B3B;
+    --gray: #8A8A8A;
+    --line: #E9E9E9;
+    --bg: #ffffff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #d9d9d9; font-family: "Pretendard", sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .slide { width: 1600px; height: 900px; position: relative; display: flex; background: var(--bg); overflow: hidden; margin: 0 auto 40px; }
+  body.single .slide { display: none; margin: 0; }
+  body.single .slide.on { display: flex; }
+
+  /* ---------- left panel ---------- */
+  .side { width: 500px; flex: none; background: var(--yellow); position: relative; padding: 92px 64px 0 72px; }
+  .side .num { font-family: "Montserrat", sans-serif; font-weight: 900; font-size: 200px; line-height: .8; letter-spacing: -8px; color: rgba(28,27,25,.13); position: absolute; left: 52px; top: 70px; }
+  .side .eyebrow { position: relative; font-family: "Montserrat", sans-serif; font-weight: 800; font-size: 15px; letter-spacing: 4px; color: var(--ink); opacity: .55; margin-top: 16px; }
+  .side h2 { position: relative; font-weight: 900; font-size: 62px; letter-spacing: -2px; line-height: 1.1; margin-top: 92px; }
+  .side .bar { width: 56px; height: 6px; background: var(--ink); margin: 26px 0 28px; }
+  .side p { position: relative; font-size: 19px; font-weight: 500; line-height: 1.7; color: #3a3320; word-break: keep-all; }
+  .side p b { font-weight: 800; color: var(--ink); }
+  .mascot { position: absolute; bottom: -8px; height: 430px; left: 50%; transform: translateX(-50%); filter: drop-shadow(0 18px 18px rgba(80,55,0,.22)); }
+  .mascot.m2, .mascot.m3, .mascot.m4 { bottom: 0; filter: drop-shadow(0 -2px 18px rgba(80,55,0,.18)); }
+  .mascot.m2 { height: 400px; }
+  .mascot.m3 { height: 380px; }
+  .mascot.m4 { height: 400px; }
+  .s2 .ground, .s3 .ground, .s4 .ground { display: none; }
+  .side .ground { position: absolute; bottom: 18px; left: 50%; width: 220px; height: 26px; transform: translateX(-50%); background: radial-gradient(closest-side, rgba(120,80,0,.28), transparent); }
+
+  /* ---------- right panel ---------- */
+  .main { flex: 1; position: relative; padding: 96px 84px 70px 84px; }
+  .main::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 18px; background: #F1F1F1; }
+  .main::after { content: ""; position: absolute; top: 18px; left: 0; width: 6px; bottom: 0; background: var(--ink); }
+  .kicker { display: inline-flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 700; letter-spacing: .5px; color: var(--charcoal); }
+  .kicker::before { content: ""; width: 22px; height: 22px; border-radius: 50%; background: var(--yellow); box-shadow: inset 0 0 0 5px var(--ink); }
+  .hl { background: linear-gradient(transparent 58%, var(--yellow) 58%, var(--yellow) 92%, transparent 92%); padding: 0 2px; }
+  .page { position: absolute; right: 48px; bottom: 34px; font-family: "Montserrat", sans-serif; font-weight: 800; font-size: 14px; letter-spacing: 3px; color: #c4c4c4; }
+  .page b { color: var(--ink); }
+
+  /* ---------- 01 ---------- */
+  .s1 .logo { height: 74px; margin-top: 26px; display: block; }
+  .s1 h3 { font-size: 34px; font-weight: 800; letter-spacing: -1px; margin-top: 26px; line-height: 1.35; }
+  .s1 .lead { font-size: 19px; line-height: 1.75; color: #444; margin-top: 18px; width: 560px; word-break: keep-all; }
+  .s1 .lead b { color: var(--ink); font-weight: 700; }
+  .s1 .laptop { position: absolute; right: 30px; top: 150px; width: 470px; filter: drop-shadow(0 24px 30px rgba(0,0,0,.16)); }
+  .s1 .facts { position: absolute; left: 84px; right: 84px; bottom: 76px; display: grid; grid-template-columns: 1.15fr .8fr 1.45fr 1.4fr; gap: 16px; }
+  .fact { border: 2px solid var(--ink); border-radius: 18px; padding: 20px 22px; background: #fff; }
+  .fact .k { font-size: 14px; font-weight: 700; color: var(--gray); letter-spacing: .5px; }
+  .fact .v { white-space: nowrap; font-size: 20px; font-weight: 800; margin-top: 8px; letter-spacing: -.5px; }
+  .fact.award { background: var(--ink); color: #fff; display: flex; align-items: center; gap: 14px; padding: 20px 18px; }
+  .fact.award .k { color: rgba(255,255,255,.55); }
+  .fact.award .v { color: var(--yellow); }
+  .fact.award svg { flex: none; }
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .tags span { font-size: 14px; font-weight: 700; padding: 5px 11px; border-radius: 999px; background: var(--cream); border: 1.5px solid var(--ink); }
+  .tagline { position: absolute; left: 584px; bottom: 236px; font-weight: 900; font-size: 64px; letter-spacing: -2.5px; color: rgba(28,27,25,.08); white-space: nowrap; z-index: 2; pointer-events: none; }
+
+  /* ---------- 02 ---------- */
+  .s2 h3 { font-size: 34px; font-weight: 800; letter-spacing: -1px; margin-top: 18px; }
+  .probs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 40px; }
+  .prob { border-radius: 22px; background: var(--charcoal); color: #fff; padding: 28px 26px 26px; position: relative; overflow: hidden; }
+  .prob .ic { width: 52px; height: 52px; border-radius: 14px; background: var(--yellow); display: grid; place-items: center; }
+  .prob .t { font-size: 23px; font-weight: 800; margin-top: 18px; letter-spacing: -.5px; }
+  .prob .d { font-size: 16px; line-height: 1.6; color: rgba(255,255,255,.7); margin-top: 8px; word-break: keep-all; }
+  .prob .x { position: absolute; right: 20px; top: 18px; font-family: "Montserrat", sans-serif; font-weight: 900; font-size: 54px; color: rgba(255,255,255,.08); }
+  .arrow { display: flex; justify-content: center; margin: 26px 0 24px; }
+  .solve { border-radius: 999px; background: var(--ink); color: #fff; padding: 24px 40px; display: flex; align-items: center; gap: 22px; }
+  .solve .chip { flex: none; background: var(--yellow); color: var(--ink); font-weight: 900; font-size: 15px; letter-spacing: 2px; padding: 9px 16px; border-radius: 999px; font-family: "Montserrat", sans-serif; }
+  .solve .t { font-size: 22px; font-weight: 600; letter-spacing: -.4px; word-break: keep-all; }
+  .solve .t b { color: var(--yellow); font-weight: 800; }
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 30px; }
+  .stat { border: 2px solid var(--ink); border-radius: 22px; padding: 30px 28px; display: flex; align-items: center; gap: 26px; }
+  .stat .n { font-family: "Montserrat", sans-serif; font-weight: 900; font-size: 58px; letter-spacing: -2px; line-height: 1; }
+  .stat .n small { font-size: 30px; }
+  .stat .k { font-size: 15px; font-weight: 700; color: var(--gray); }
+  .stat .v { font-size: 20px; font-weight: 800; margin-top: 4px; }
+  .meter { height: 10px; background: #EFEFEF; border-radius: 99px; margin-top: 12px; width: 230px; overflow: hidden; }
+  .meter i { display: block; height: 100%; background: var(--yellow-deep); border-radius: 99px; }
+  .src { font-size: 13px; color: var(--gray); margin-top: 12px; }
+
+  /* ---------- 03 ---------- */
+  .s3 h3 { font-size: 34px; font-weight: 800; letter-spacing: -1px; margin-top: 18px; }
+  .feats { display: grid; grid-template-columns: 1fr 1fr; gap: 26px 26px; margin-top: 44px; }
+  .feat { display: flex; align-items: center; gap: 22px; padding: 22px 30px 22px 22px; border-radius: 999px; background: var(--cream); border: 2px solid var(--ink); min-height: 150px; }
+  .feat .no { flex: none; width: 78px; height: 78px; border-radius: 50%; background: var(--ink); color: var(--yellow); display: grid; place-items: center; font-family: "Montserrat", sans-serif; font-weight: 900; font-size: 30px; }
+  .feat .t { font-size: 24px; font-weight: 800; letter-spacing: -.6px; }
+  .feat .d { font-size: 17px; line-height: 1.5; color: #4b4535; margin-top: 6px; word-break: keep-all; }
+
+  /* ---------- 04 ---------- */
+  .s4 h3 { font-size: 34px; font-weight: 800; letter-spacing: -1px; margin-top: 18px; }
+  .shots { display: grid; grid-template-columns: 1.35fr 1fr; grid-template-rows: 310px 290px; gap: 20px; margin-top: 30px; }
+  .shot { position: relative; border-radius: 18px; overflow: hidden; border: 2px solid var(--ink); background: #f6f6f6; }
+  .shot.big { grid-column: auto; }
+  .shot img { width: 100%; height: 100%; object-fit: cover; object-position: top center; display: block; }
+  .shot.mock { background: var(--cream); }
+  .shot.mock img { object-fit: contain; object-position: center; padding: 26px 14px 46px; }
+  .shot .cap { position: absolute; left: 12px; bottom: 12px; display: flex; align-items: center; gap: 8px; background: var(--ink); color: #fff; border-radius: 999px; padding: 8px 16px 8px 8px; font-size: 15px; font-weight: 700; }
+  .shot .cap i { font-style: normal; width: 24px; height: 24px; border-radius: 50%; background: var(--yellow); color: var(--ink); display: grid; place-items: center; font-family: "Montserrat", sans-serif; font-weight: 900; font-size: 13px; }
+  .shot .cap em { font-style: normal; font-weight: 500; color: rgba(255,255,255,.6); font-size: 13px; }
+</style>
+</head>
+<body>
+
+<!-- ================= 01 프로젝트 소개 ================= -->
+<section class="slide s1" id="s1">
+  <div class="side">
+    <div class="num">01</div>
+    <h2>프로젝트 소개</h2>
+    <div class="eyebrow">PROJECT OVERVIEW</div>
+    <div class="bar"></div>
+    <p>실제 제품을 구매하기 전에<br><b>3D 공간에서 배치와 조합</b>을 확인해<br>불필요한 구매와 공간 구성의<br>시행착오를 줄입니다.</p>
+    <div class="ground"></div>
+    <img class="mascot m1" src="assets/mascot-1.png" alt="">
+  </div>
+  <div class="tagline">미리 만들어 보는 내 책상</div>
+  <div class="main">
+    <div class="kicker">실측 기반 3D 데스크테리어 시뮬레이터</div>
+    <img class="logo" src="assets/logo.svg" alt="DERO">
+    <h3>내 책상, 사기 전에<br><span class="hl">3D로 먼저 배치</span>해 보세요.</h3>
+    <p class="lead"><b>DERO</b>는 실제 제품 규격을 기반으로 자신만의 데스크 환경을 미리 구성하고, <b>제품 간 호환성과 예산</b>을 확인할 수 있는 3D 데스크테리어 시뮬레이션 서비스입니다.</p>
+    <img class="laptop" src="assets/laptop.png" alt="">
+    <div class="facts">
+      <div class="fact"><div class="k">개발 기간</div><div class="v">2026.07 ~ 2026.08</div></div>
+      <div class="fact"><div class="k">프로젝트 유형</div><div class="v">팀 프로젝트</div></div>
+      <div class="fact"><div class="k">주요 기술</div><div class="tags"><span>React</span><span>TypeScript</span><span>Tailwind CSS</span><span>GLB</span></div></div>
+      <div class="fact award">
+        <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#FFCD4A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4Z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg>
+        <div><div class="k">주요 성과</div><div class="v">프로젝트 최우수상</div></div>
+      </div>
+    </div>
+    <div class="page"><b>01</b> / 04</div>
+  </div>
+</section>
+
+<!-- ================= 02 배경 및 문제점 ================= -->
+<section class="slide s2" id="s2">
+  <div class="side">
+    <div class="num">02</div>
+    <h2>배경 및 문제점</h2>
+    <div class="eyebrow">BACKGROUND</div>
+    <div class="bar"></div>
+    <p>데스크테리어 제품은<br>실제로 구매하고 설치하기 전까지<br><b>크기·색상·호환성</b>을<br>정확하게 파악하기 어렵습니다.</p>
+    <div class="ground"></div>
+    <img class="mascot m2" src="assets/mascot-2.png" alt="">
+  </div>
+  <div class="main">
+    <div class="kicker">PROBLEM</div>
+    <h3>사고 나서야 알게 되는 문제들</h3>
+    <div class="probs">
+      <div class="prob"><span class="x">01</span>
+        <div class="ic"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1C1B19" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.3 15.3 8.7 2.7a1 1 0 0 0-1.4 0L2.7 7.3a1 1 0 0 0 0 1.4l12.6 12.6a1 1 0 0 0 1.4 0l4.6-4.6a1 1 0 0 0 0-1.4Z"/><path d="m7.5 10.5 2-2M10.5 13.5l2-2M13.5 16.5l2-2"/></svg></div>
+        <div class="t">규격 불일치</div><div class="d">모니터암 클램프와 책상 상판 두께처럼 설치 조건이 맞지 않는 경우</div></div>
+      <div class="prob"><span class="x">02</span>
+        <div class="ic"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1C1B19" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="11" height="11" rx="1.5"/><rect x="10" y="10" width="11" height="11" rx="1.5"/></svg></div>
+        <div class="t">공간 간섭</div><div class="d">제품끼리 겹치거나 책상 위 공간이 부족해 배치가 어려운 경우</div></div>
+      <div class="prob"><span class="x">03</span>
+        <div class="ic"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1C1B19" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17 9 11l4 4 8-8"/><path d="M15 7h6v6"/></svg></div>
+        <div class="t">예산 초과</div><div class="d">제품을 하나씩 더하다 보면 예상보다 커지는 전체 비용</div></div>
+    </div>
+    <div class="arrow"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#1C1B19" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v16M5 13l7 7 7-7"/></svg></div>
+    <div class="solve">
+      <span class="chip">SOLUTION</span>
+      <span class="t">실제 제품의 <b>규격과 가격</b>을 기반으로, 구매 전 데스크 환경을 검토하는 <b>3D 시뮬레이터</b></span>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="n">93.3<small>%</small></div>
+        <div><div class="k">사전 사용자 설문</div><div class="v">배치 미리보기 기능 긍정 응답</div><div class="meter"><i style="width:93.3%"></i></div></div></div>
+      <div class="stat"><div class="n">88.6<small>%</small></div>
+        <div><div class="k">사전 사용자 설문</div><div class="v">서비스 사용 의향</div><div class="meter"><i style="width:88.6%"></i></div></div></div>
+    </div>
+    <div class="page"><b>02</b> / 04</div>
+  </div>
+</section>
+
+<!-- ================= 03 주요 기능 ================= -->
+<section class="slide s3" id="s3">
+  <div class="side">
+    <div class="num">03</div>
+    <h2>주요 기능</h2>
+    <div class="eyebrow">KEY FEATURES</div>
+    <div class="bar"></div>
+    <p>배치부터 호환성, 예산, 공유까지<br><b>구매 전 데스크 검토</b>에 필요한<br>흐름을 하나로 담았습니다.</p>
+    <div class="ground"></div>
+    <img class="mascot m3" src="assets/mascot-3.png" alt="">
+  </div>
+  <div class="main">
+    <div class="kicker">FEATURES</div>
+    <h3>DERO에서 할 수 있는 것</h3>
+    <div class="feats">
+      <div class="feat"><div class="no">1</div><div><div class="t">3D 데스크 시뮬레이터</div><div class="d">실제 제품 크기를 반영한 데스크 환경 구성</div></div></div>
+      <div class="feat"><div class="no">2</div><div><div class="t">배치 및 호환성 검토</div><div class="d">제품 간 크기와 설치 조건을 고려한 배치 확인</div></div></div>
+      <div class="feat"><div class="no">3</div><div><div class="t">다중 카메라 시점</div><div class="d">1인칭 · 3인칭 · 탑뷰 · 후면뷰 제공</div></div></div>
+      <div class="feat"><div class="no">4</div><div><div class="t">벽면 표시 전환</div><div class="d">좌 · 우 · 앞 3면의 벽을 개별로 표시 및 숨김</div></div></div>
+      <div class="feat"><div class="no">5</div><div><div class="t">예산 관리</div><div class="d">선택한 제품의 가격으로 예상 비용 확인</div></div></div>
+      <div class="feat"><div class="no">6</div><div><div class="t">커뮤니티</div><div class="d">데스크 구성 공유 및 사용자 간 정보 교류</div></div></div>
+    </div>
+    <div class="page"><b>03</b> / 04</div>
+  </div>
+</section>
+
+<!-- ================= 04 실행 화면 ================= -->
+<section class="slide s4" id="s4">
+  <div class="side">
+    <div class="num">04</div>
+    <h2>실행 화면</h2>
+    <div class="eyebrow">SCREENS</div>
+    <div class="bar"></div>
+    <p>메인부터 시뮬레이터, 예산 확인,<br>커뮤니티까지<br><b>DERO의 주요 화면</b>입니다.</p>
+    <div class="ground"></div>
+    <img class="mascot m4" src="assets/mascot-4.png" alt="">
+  </div>
+  <div class="main">
+    <div class="kicker">SCREENSHOTS</div>
+    <h3>직접 배치하고, 확인하고, 공유하기</h3>
+    <div class="shots">
+      <div class="shot big"><img src="assets/sim.png" alt=""><div class="cap"><i>2</i>3D 데스크 시뮬레이터 <em>배치 · 카메라 전환 · 벽면 표시</em></div></div>
+      <div class="shot mock"><img src="assets/laptop.png" alt=""><div class="cap"><i>1</i>메인 화면</div></div>
+      <div class="shot"><img src="assets/product.png" alt=""><div class="cap"><i>3</i>제품 구성 · 예산 확인</div></div>
+      <div class="shot"><img src="assets/community.png" alt=""><div class="cap"><i>4</i>커뮤니티</div></div>
+    </div>
+    <div class="page"><b>04</b> / 04</div>
+  </div>
+</section>
+
+<script>
+  const s = new URLSearchParams(location.search).get("s");
+  if (s) { document.body.classList.add("single"); document.getElementById("s" + s).classList.add("on"); }
+</script>
+</body>
+</html>
