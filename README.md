@@ -7,44 +7,6 @@
   <img src="docs/readme/slide-04.png" alt="04 실행 화면" width="100%">
 </p>
 
-<details>
-<summary>01~04 슬라이드 텍스트 보기</summary>
-
-### 01. 프로젝트 소개
-
-**DERO는 실제 제품 규격을 기반으로 자신만의 데스크 환경을 미리 구성하고, 제품 간 호환성과 예산을 확인할 수 있는 3D 데스크테리어 시뮬레이션 서비스입니다.**
-실제 제품을 구매하기 전에 3D 공간에서 배치와 조합을 확인하여 불필요한 구매와 공간 구성의 시행착오를 줄이는 것을 목표로 개발했습니다.
-
-| 항목 | 내용 |
-|---|---|
-| 프로젝트명 | DERO (데로) |
-| 개발 기간 | 2026.07 ~ 2026.08 |
-| 프로젝트 유형 | 팀 프로젝트 |
-| 주요 기술 | React, TypeScript, Tailwind CSS, 3D GLB 에셋 |
-| 주요 성과 | 프로젝트 최우수상 |
-
-### 02. 배경 및 문제점
-
-데스크테리어 제품은 실제로 구매하고 설치하기 전까지 크기와 색상, 제품 간 호환성을 정확하게 파악하기 어렵습니다. 특히 모니터암의 규격 불일치, 제품 간 공간 간섭, 예상 예산 초과 등의 문제로 추가적인 비용이 발생할 수 있습니다.
-이를 해결하기 위해 실제 제품의 규격과 가격을 기반으로 구매 전 데스크 환경을 검토할 수 있는 3D 시뮬레이터를 기획했습니다. 사전 사용자 설문에서는 배치 미리보기 기능에 대한 긍정 응답이 **93.3%**, 서비스 사용 의향이 **88.6%** 로 나타났습니다.
-
-### 03. 주요 기능
-
-| 기능 | 설명 |
-|---|---|
-| 3D 데스크 시뮬레이터 | 실제 제품 크기를 반영한 데스크 환경 구성 |
-| 제품 배치 및 호환성 검토 | 제품 간 크기와 설치 조건을 고려한 배치 확인 |
-| 다중 카메라 시점 | 1인칭, 3인칭, 탑뷰, 후면뷰 제공 |
-| 벽면 표시 전환 | 좌·우·앞 3면의 벽을 개별적으로 표시 및 숨김 |
-| 예산 관리 | 선택한 제품의 가격을 바탕으로 예상 비용 확인 |
-| 커뮤니티 | 데스크 구성 공유 및 사용자 간 정보 교류 |
-
-### 04. 실행 화면
-
-메인 화면 · 3D 데스크 시뮬레이터 · 제품 구성 및 예산 확인 · 커뮤니티
-
-</details>
-
 ## 05. 담당 역할
 
 **조규홍 — Frontend 개발**
@@ -141,33 +103,3 @@ React 기반 프론트엔드와 Spring Boot 기반 백엔드를 분리하고, �
 
 본 프로젝트는 교육 및 포트폴리오 목적으로 제작되었습니다.
 별도의 오픈소스 라이선스 적용 여부는 팀의 최종 공개 정책에 따릅니다.
-
----
-
-<details>
-<summary>저장소 구조 · 로컬 실행</summary>
-
-```
-backend/dero-api/   Spring Boot API 서버
-frontend/           Next.js + Three.js 웹 앱
-docs/               기획·설계 정본 (SPEC, REQUIREMENTS, ERD, ADR, 배포 토폴로지 등)
-infra/              nginx 설정
-observability/      ES·Kibana·Prometheus·Grafana·Filebeat 설정
-scripts/            배포 스위치·에셋 파이프라인 스크립트
-compose*.yaml       앱 / 데이터 / 관측 3계층 Docker Compose
-Jenkinsfile         CI/CD 파이프라인 (main 푸시 = blue-green 배포)
-```
-
-```bash
-docker compose -f compose.data.yaml up -d        # postgres + redis
-
-cd backend/dero-api
-./gradlew bootRun --args='--spring.profiles.active=local --spring.datasource.url=jdbc:postgresql://localhost:5432/dero_db'
-
-cd frontend
-npm ci && npm run dev                            # http://localhost:3000
-```
-
-전체 빌드·배포 절차, 환경변수, DB 덤프 복원: [docs/context/deployment.md](docs/context/deployment.md)
-
-</details>
