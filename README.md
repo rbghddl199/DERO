@@ -1,11 +1,32 @@
 # 🖥️ DERO — 실측 기반 3D 데스크테리어 시뮬레이터
 
-<p align="center">
-  <img src="docs/readme/slide-01.png" alt="01 프로젝트 소개" width="100%">
-  <img src="docs/readme/slide-02.png" alt="02 배경 및 문제점" width="100%">
-  <img src="docs/readme/slide-03.png" alt="03 주요 기능" width="100%">
-  <img src="docs/readme/slide-04.png" alt="04 실행 화면" width="100%">
-</p>
+> **내 책상, 사기 전에 3D로 먼저 배치해 보세요.**
+> 실제 제품 규격을 기반으로 데스크 환경을 구성하고, 제품 간 호환성과 예산을 미리 확인하는 3D 데스크테리어 서비스입니다.
+
+| 항목 | 내용 |
+|---|---|
+| 개발 기간 | 2026.07 ~ 2026.08 |
+| 프로젝트 유형 | 팀 프로젝트 |
+| 담당 역할 | Frontend |
+| 주요 기능 | 실측 스펙 기반 3D 배치 · 호환성 검증 · 예산 확인 |
+| 주요 기술 | React · Tailwind CSS (서비스: Spring Boot · Next.js · Three.js) |
+| 주요 성과 | 🏆 프로젝트 우수상 |
+
+## 01. 프로젝트 소개
+
+![프로젝트 소개](docs/readme/slide-01.png)
+
+## 02. 배경 및 문제점
+
+![배경 및 문제점](docs/readme/slide-02.png)
+
+## 03. 주요 기능
+
+![주요 기능](docs/readme/slide-03.png)
+
+## 04. 실행 화면
+
+![실행 화면](docs/readme/slide-04.png)
 
 ## 05. 담당 역할
 
